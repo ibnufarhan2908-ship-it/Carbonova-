@@ -392,6 +392,116 @@ Setiap soal harus memiliki:
 
 Untuk MVP, sediakan minimal 5 soal pada setiap kategori yang telah diimplementasikan.
 
+### 8.5 Quiz Result Persistence (Persistent Quiz History)
+
+Buat sistem penyimpanan hasil kuis agar data pengerjaan siswa tidak hilang ketika halaman direfresh atau website dibuka kembali.
+
+#### A. Main Requirements
+
+Setiap kali siswa menyelesaikan kuis, website harus menyimpan hasil pengerjaan secara otomatis.
+
+Data yang disimpan meliputi:
+- ID pengerjaan kuis.
+- Nama atau kategori kuis.
+- Tanggal dan waktu pengerjaan.
+- Jumlah soal.
+- Jumlah jawaban benar.
+- Jumlah jawaban salah.
+- Skor akhir.
+- Jawaban yang dipilih siswa.
+- Kunci jawaban.
+- Status pengerjaan.
+- Pembahasan soal.
+
+#### B. Persistent Storage
+
+Untuk MVP, gunakan browser localStorage sebagai penyimpanan permanen lokal.
+
+Persyaratan:
+1. Simpan hasil secara otomatis ketika siswa menyelesaikan kuis.
+2. Data harus tetap tersedia setelah browser direfresh.
+3. Data harus tetap tersedia ketika siswa meninggalkan halaman kemudian kembali.
+4. Data harus tetap tersedia ketika browser ditutup dan dibuka kembali pada perangkat yang sama.
+5. Gunakan struktur data JSON yang konsisten.
+6. Setiap pengerjaan memiliki ID unik.
+7. Jangan menimpa hasil pengerjaan sebelumnya ketika siswa mengerjakan kuis yang sama lagi.
+8. Tangani kondisi ketika localStorage kosong atau data tidak dapat dibaca.
+
+Catatan: localStorage menyimpan data secara lokal pada browser dan perangkat yang digunakan. Data tidak otomatis tersinkronisasi antarperangkat.
+
+#### C. Quiz History Page
+
+Buat halaman khusus bernama "Riwayat Kuis".
+
+Halaman ini menampilkan seluruh hasil pengerjaan kuis yang pernah diselesaikan siswa.
+
+Informasi yang ditampilkan:
+- Nama kuis.
+- Tanggal pengerjaan.
+- Skor akhir.
+- Jumlah jawaban benar.
+- Jumlah soal.
+- Status pengerjaan.
+
+Fitur:
+- Melihat detail hasil pengerjaan.
+- Melihat kembali jawaban siswa.
+- Melihat kunci jawaban.
+- Membaca pembahasan setiap soal.
+- Mengurutkan riwayat berdasarkan tanggal terbaru.
+- Mengakses hasil pengerjaan sebelumnya.
+- Menghapus riwayat dengan konfirmasi terlebih dahulu.
+
+#### D. Quiz Result Detail
+
+Ketika siswa memilih salah satu riwayat kuis, tampilkan halaman detail yang berisi:
+
+1. Nama kuis.
+2. Tanggal pengerjaan.
+3. Skor akhir.
+4. Persentase jawaban benar.
+5. Jumlah jawaban benar dan salah.
+6. Rincian jawaban setiap nomor.
+7. Jawaban yang dipilih siswa.
+8. Kunci jawaban yang benar.
+9. Pembahasan soal.
+
+Hasil yang ditampilkan harus sesuai dengan data pengerjaan pada saat kuis diselesaikan, bukan dihitung ulang menggunakan data yang mungkin sudah berubah.
+
+#### E. Dashboard Learning Progress
+
+Tambahkan ringkasan hasil belajar pada dashboard siswa:
+- Total kuis yang telah diselesaikan.
+- Rata-rata skor seluruh kuis.
+- Skor tertinggi.
+- Kuis terakhir yang dikerjakan.
+- Riwayat pengerjaan.
+
+Semua informasi harus diperoleh dari data hasil kuis yang tersimpan.
+
+#### F. Data Integrity
+
+- Gunakan ID unik untuk setiap pengerjaan.
+- Jangan membuat duplikasi hasil akibat refresh.
+- Simpan hasil hanya setelah kuis berhasil diselesaikan.
+- Jangan menghapus hasil sebelumnya ketika kuis baru dimulai.
+- Berikan konfirmasi sebelum menghapus riwayat.
+- Pastikan hasil lama tetap dapat dibaca meskipun terdapat penambahan fitur baru.
+- Jangan menyimpan jawaban sementara sebagai hasil kuis selesai.
+
+#### G. Acceptance Criteria
+
+Fitur dinyatakan berhasil jika:
+1. Siswa menyelesaikan kuis dan mendapatkan hasil.
+2. Hasil otomatis tersimpan di localStorage.
+3. Ketika halaman direfresh, hasil tetap tersedia.
+4. Ketika siswa membuka kembali website pada browser yang sama, riwayat tetap tersedia.
+5. Ketika siswa mengerjakan kuis yang sama kembali, hasil sebelumnya tidak tertimpa.
+6. Siswa dapat membuka detail hasil pengerjaan sebelumnya.
+7. Siswa dapat melihat jawaban, kunci jawaban, dan pembahasan.
+8. Riwayat dapat dihapus melalui konfirmasi.
+9. Dashboard menampilkan statistik berdasarkan data tersimpan.
+10. Tidak ada data hasil yang hilang akibat navigasi ant halaman.
 ---
 
 ## 9. DESIGN SYSTEM AND UI/UX

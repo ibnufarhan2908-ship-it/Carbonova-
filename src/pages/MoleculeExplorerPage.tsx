@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Compass, Search } from 'lucide-react'
 import MoleculeViewer2D from '../components/molecules/MoleculeViewer2D'
 import { MOLECULES_DATA } from '../data/molecules'
 
 export default function MoleculeExplorerPage() {
-  const [searchParams] = useSearchParams()
-  const initialId = searchParams.get('id') || 'metana'
+  const [searchParams, setSearchParams] = useSearchParams()
+  const moleculeIdFromUrl = searchParams.get('id')
+  const [internalSelectedId, setInternalSelectedId] = useState<string>('metana')
+  const selectedMoleculeId = moleculeIdFromUrl || internalSelectedId
 
-  const [selectedMoleculeId, setSelectedMoleculeId] = useState<string>(initialId)
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
-  useEffect(() => {
-    const idFromUrl = searchParams.get('id')
-    if (idFromUrl) {
-      setSelectedMoleculeId(idFromUrl)
-    }
-  }, [searchParams])
+  const handleSelectMolecule = (id: string) => {
+    setInternalSelectedId(id)
+    setSearchParams({ id })
+  }
 
   const categories = [
     'Semua',
@@ -25,8 +24,10 @@ export default function MoleculeExplorerPage() {
     'Alkena',
     'Alkuna',
     'Alkohol',
+    'Aldehida',
     'Keton',
     'Asam Karboksilat',
+    'Ester',
     'Aromatik',
   ]
 
@@ -100,7 +101,7 @@ export default function MoleculeExplorerPage() {
               return (
                 <button
                   key={m.id}
-                  onClick={() => setSelectedMoleculeId(m.id)}
+                  onClick={() => handleSelectMolecule(m.id)}
                   className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-center justify-between ${
                     isSelected
                       ? 'bg-teal-50/60 border-[#1DAA9A] ring-1 ring-[#1DAA9A]'

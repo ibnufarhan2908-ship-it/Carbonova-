@@ -25,4 +25,5 @@ dist-ssr
 
 .env
 .env.local
+.agents
 .agent

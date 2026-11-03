@@ -305,3 +305,115 @@ A task is complete only when:
 - Known limitations are documented.
 
 Your ultimate objective is to deliver Carbonova as a real, usable chemistry learning application—not merely a visually attractive prototype.
+
+### 13. PERSISTENT QUIZ DATA MANAGEMENT
+
+You are responsible for ensuring that quiz results remain available even after page refreshes, browser restarts, or navigation between pages.
+
+#### A. Storage Strategy
+
+For the MVP, use browser localStorage.
+
+Create a dedicated storage utility rather than accessing localStorage directly from multiple UI components.
+
+Suggested files:
+
+- `src/utils/quizStorage.ts`
+- `src/types/quiz.ts`
+- `src/hooks/useQuizHistory.ts`
+
+#### B. Data Structure
+
+Use a consistent data structure similar to:
+
+```typescript
+interface QuizResult {
+  id: string;
+  quizId: string;
+  quizTitle: string;
+  completedAt: string;
+  totalQuestions: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  score: number;
+  answers: {
+    questionId: string;
+    selectedAnswer: string;
+    correctAnswer: string;
+    isCorrect: boolean;
+    explanation: string;
+  }[];
+}
+```
+
+Store multiple quiz attempts as an array of QuizResult objects.
+
+Each attempt must have a unique identifier.
+
+#### C. Storage Operations
+
+Implement reusable functions:
+
+- `saveQuizResult()`
+- `getQuizHistory()`
+- `getQuizResultById()`
+- `deleteQuizResult()`
+- `clearQuizHistory()`
+- `getQuizStatistics()`
+
+All storage operations must handle invalid JSON, missing data, and storage errors safely.
+
+#### D. Persistence Rules
+
+1. Save completed quiz results automatically.
+2. Do not rely only on React component state.
+3. Load existing quiz history when the application initializes.
+4. Do not overwrite previous attempts.
+5. Do not save incomplete attempts as completed results.
+6. Prevent duplicate saving when a component rerenders or the user refreshes the result page.
+7. Use a unique attempt ID to identify each submission.
+8. Preserve historical answer details even if question content changes later.
+9. Synchronize UI state after storage changes.
+10. Display appropriate empty states when no quiz history exists.
+
+#### E. Quiz History UI
+
+Create a dedicated Quiz History page.
+
+The page must:
+- Display all completed attempts.
+- Sort results by newest first.
+- Display quiz titles, dates, and scores.
+- Allow users to open individual result details.
+- Allow deletion with confirmation.
+- Display loading, empty, and error states appropriately.
+
+#### F. Result Detail UI
+
+Display the original submitted answers, correct answers, and explanations.
+
+Never reconstruct historical results using only the current question bank because questions may change over time.
+
+#### G. Testing Requirements
+
+Test these scenarios:
+
+1. Complete a quiz and refresh the result page.
+2. Navigate to another page and return.
+3. Close and reopen the browser.
+4. Complete the same quiz multiple times.
+5. Verify that all attempts remain available.
+6. Delete one attempt and verify that other attempts remain.
+7. Test empty storage.
+8. Test invalid or corrupted storage data.
+9. Verify that statistics match the stored attempts.
+
+#### H. Important Limitations
+
+localStorage is device-specific and browser-specific.
+
+Do not claim that results synchronize across different devices or browsers.
+
+If cloud synchronization is required in the future, propose a backend database and user authentication system.
+
+**Definition of Done:** Quiz results remain accessible after refresh, navigation, and browser restart on the same browser and device, without overwriting previous attempts.

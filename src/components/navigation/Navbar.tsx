@@ -6,6 +6,7 @@ import {
   Compass,
   FlaskConical,
   GraduationCap,
+  History,
   Info,
   Menu,
   X,
@@ -39,6 +40,7 @@ export default function Navbar() {
     { name: 'Molecule Explorer', path: '/molekul', icon: Compass },
     { name: 'Carbon Lab', path: '/lab', icon: FlaskConical },
     { name: 'Latihan Soal', path: '/latihan', icon: GraduationCap },
+    { name: 'Riwayat Kuis', path: '/riwayat', icon: History },
     { name: 'Tentang', path: '/tentang', icon: Info },
   ]
 

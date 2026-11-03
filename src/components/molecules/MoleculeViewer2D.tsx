@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Molecule, AtomType } from '../../types/chemistry'
-import { Eye, Info } from 'lucide-react'
+import { Eye, Info, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 
 interface MoleculeViewer2DProps {
   molecule: Molecule
@@ -17,6 +17,7 @@ export default function MoleculeViewer2D({
 }: MoleculeViewer2DProps) {
   const [viewMode, setViewMode] = useState<'ball-and-stick' | 'structural'>('ball-and-stick')
   const [hoveredAtom, setHoveredAtom] = useState<string | null>(null)
+  const [zoomLevel, setZoomLevel] = useState<number>(1)
 
   // Color mapping based on standard chemistry convention & Carbonova palette
   const getAtomColor = (element: AtomType) => {
@@ -26,28 +27,28 @@ export default function MoleculeViewer2D({
           fill: '#101C3A',
           stroke: '#5DE0E6',
           text: '#FFFFFF',
-          label: 'Karbon (Valensi 4)',
+          label: 'Karbon (C, Valensi 4)',
         }
       case 'H':
         return {
           fill: '#FFFFFF',
           stroke: '#94A3B8',
           text: '#1E293B',
-          label: 'Hidrogen (Valensi 1)',
+          label: 'Hidrogen (H, Valensi 1)',
         }
       case 'O':
         return {
           fill: '#EF4444',
           stroke: '#FCA5A5',
           text: '#FFFFFF',
-          label: 'Oksigen (Valensi 2)',
+          label: 'Oksigen (O, Valensi 2)',
         }
       case 'N':
         return {
           fill: '#3B82F6',
           stroke: '#93C5FD',
           text: '#FFFFFF',
-          label: 'Nitrogen (Valensi 3)',
+          label: 'Nitrogen (N, Valensi 3)',
         }
       default:
         return {
@@ -59,49 +60,112 @@ export default function MoleculeViewer2D({
     }
   }
 
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(1.6, Math.round((prev + 0.15) * 100) / 100))
+  }
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(0.7, Math.round((prev - 0.15) * 100) / 100))
+  }
+
+  const handleReset = () => {
+    setZoomLevel(1)
+    setViewMode('ball-and-stick')
+  }
+
   // Find atom by ID
   const atomMap = new Map(molecule.atoms.map((a) => [a.id, a]))
 
   return (
-    <div className={`relative flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden ${className}`}>
+    <div
+      className={`relative flex flex-col bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden ${className}`}
+    >
       {/* Top Header / Mode Switcher */}
       {showControls && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50/70 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 border-b border-slate-100 bg-slate-50/80 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700">{molecule.name}</span>
-            <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200/60">
+            <span className="font-extrabold text-[#101C3A]">{molecule.name}</span>
+            <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200">
               {molecule.formula}
+            </span>
+            <span className="hidden sm:inline font-mono text-[11px] text-slate-500">
+              ({molecule.condensedFormula})
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* View Mode Toggle */}
             <button
-              onClick={() => setViewMode(viewMode === 'ball-and-stick' ? 'structural' : 'ball-and-stick')}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-600 font-medium transition-all shadow-2xs"
+              onClick={() =>
+                setViewMode(viewMode === 'ball-and-stick' ? 'structural' : 'ball-and-stick')
+              }
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold transition-all shadow-2xs"
             >
               <Eye className="w-3.5 h-3.5 text-teal-600" />
               <span>{viewMode === 'ball-and-stick' ? 'Model Bola-Tongkat' : 'Rumus Struktur'}</span>
+            </button>
+
+            {/* Zoom Controls */}
+            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-2xs">
+              <button
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 0.7}
+                className="p-1 rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-30"
+                title="Perkecil Zoom"
+                aria-label="Perkecil Zoom"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <span className="px-1.5 font-mono text-[10px] font-bold text-slate-500 select-none">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 1.6}
+                className="p-1 rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-30"
+                title="Perbesar Zoom"
+                aria-label="Perbesar Zoom"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Reset View Button */}
+            <button
+              onClick={handleReset}
+              className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 shadow-2xs transition-colors"
+              title="Reset Tampilan"
+              aria-label="Reset Tampilan"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       )}
 
       {/* SVG Canvas Area */}
-      <div className="relative w-full flex items-center justify-center bg-radial from-slate-50 to-white" style={{ height }}>
+      <div
+        className="relative w-full flex items-center justify-center bg-radial from-slate-50 to-white overflow-hidden"
+        style={{ height }}
+      >
         {/* Subtle grid pattern background */}
-        <svg className="absolute inset-0 w-full h-full opacity-40 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          className="absolute inset-0 w-full h-full opacity-40 pointer-events-none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <defs>
-            <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <pattern id="mol-grid" width="24" height="24" patternUnits="userSpaceOnUse">
               <circle cx="2" cy="2" r="1" fill="#CBD5E1" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <rect width="100%" height="100%" fill="url(#mol-grid)" />
         </svg>
 
         {/* Molecular Drawing */}
         <svg
           viewBox="0 0 400 300"
-          className="w-full h-full max-h-[300px] select-none transition-transform duration-300"
+          className="w-full h-full max-h-[300px] select-none transition-transform duration-200"
+          style={{ transform: `scale(${zoomLevel})` }}
         >
           {/* Render Chemical Bonds */}
           {molecule.bonds.map((bond, idx) => {
@@ -250,7 +314,7 @@ export default function MoleculeViewer2D({
 
         {/* Hovered Atom tooltip */}
         {hoveredAtom && (
-          <div className="absolute top-3 left-4 px-3 py-1 rounded-lg bg-slate-900/90 text-white text-xs font-semibold shadow-lg backdrop-blur-xs flex items-center gap-1.5 animate-in fade-in">
+          <div className="absolute top-3 left-4 px-3 py-1 rounded-lg bg-slate-900/90 text-white text-xs font-semibold shadow-lg backdrop-blur-xs flex items-center gap-1.5 animate-in fade-in pointer-events-none">
             <Info className="w-3.5 h-3.5 text-[#5DE0E6]" />
             <span>{hoveredAtom}</span>
           </div>
@@ -258,9 +322,9 @@ export default function MoleculeViewer2D({
       </div>
 
       {/* Atom Color Legend */}
-      <div className="flex flex-wrap items-center justify-between px-4 py-2 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-500">
+      <div className="flex flex-wrap items-center justify-between px-4 sm:px-6 py-2.5 border-t border-slate-100 bg-slate-50/70 text-[11px] text-slate-500">
         <div className="flex items-center gap-4">
-          <span className="font-semibold text-slate-600">Legenda Atom:</span>
+          <span className="font-semibold text-slate-700">Legenda Atom:</span>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-[#101C3A] border border-[#5DE0E6] inline-block"></span>
             <span>C (Karbon)</span>
@@ -275,9 +339,13 @@ export default function MoleculeViewer2D({
           </div>
         </div>
 
-        <span className="hidden sm:inline-block font-mono text-slate-400">
-          Mr = {molecule.molecularWeight} g/mol
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-slate-500 font-bold">
+            Mr = {molecule.molecularWeight} g/mol
+          </span>
+          <span className="text-slate-400">|</span>
+          <span className="font-medium text-slate-500">{molecule.bondTypes.length} Tipe Ikatan</span>
+        </div>
       </div>
     </div>
   )
