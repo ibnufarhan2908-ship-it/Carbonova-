@@ -33,6 +33,30 @@ export interface Molecule {
   bonds: MoleculeBond[]
 }
 
+export interface SubSection {
+  title: string
+  content: string
+  formula?: string
+  highlight?: string
+  table?: {
+    headers: string[]
+    rows: string[][]
+  }
+}
+
+export interface DetailedLesson {
+  id: string
+  slug: string
+  moduleNumber: number
+  title: string
+  subtitle: string
+  category: string
+  introduction: string
+  sections: SubSection[]
+  summaryPoints: string[]
+  interactiveWidgetType?: 'name-molecule' | 'isomer-compare' | 'valence-demo'
+}
+
 export interface LessonSection {
   id: string
   title: string

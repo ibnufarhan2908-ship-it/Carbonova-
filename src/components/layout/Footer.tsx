@@ -62,6 +62,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/riwayat" className="text-slate-400 hover:text-white transition-colors">
+                  Riwayat Kuis
+                </Link>
+              </li>
+              <li>
                 <Link to="/tentang" className="text-slate-400 hover:text-white transition-colors">
                   Tentang Kami
                 </Link>
@@ -151,7 +156,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>
-            © {new Date().getFullYear()} Carbonova. Dirancang untuk media pembelajaran Kimia SMA/MA.
+            © 2026 Carbonova. Dirancang untuk media pembelajaran Kimia SMA/MA.
           </p>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 text-slate-400">

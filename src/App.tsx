@@ -17,6 +17,7 @@ export default function App() {
           <Route path="molekul" element={<MoleculeExplorerPage />} />
           <Route path="lab" element={<CarbonLabPage />} />
           <Route path="latihan" element={<QuizPage />} />
+          <Route path="riwayat" element={<QuizPage />} />
           <Route path="tentang" element={<AboutPage />} />
           {/* Catch-all redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />

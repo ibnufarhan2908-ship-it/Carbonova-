@@ -1,21 +1,63 @@
 import { useState } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import {
   BookOpen,
   Search,
   ArrowRight,
   Clock,
   CheckCircle2,
+  Atom,
 } from 'lucide-react'
 import { LESSON_MODULES } from '../data/lessons'
+import { LESSON_DETAILS } from '../data/lessonDetails'
+import LessonDetailView from '../components/materials/LessonDetailView'
 
 export default function MaterialsPage() {
-  const [searchParams] = useSearchParams()
-  const initialModul = searchParams.get('modul') || ''
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeModuleSlug = searchParams.get('modul') || ''
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua')
 
-  const categories = ['Semua', 'Konsep Dasar', 'Golongan Utama', 'Nomenklatur Kimia', 'Turunan Alkana', 'Struktur Molekul', 'Reaktivitas Kimia']
+  const categories = [
+    'Semua',
+    'Konsep Dasar',
+    'Golongan Utama',
+    'Nomenklatur Kimia',
+    'Turunan Alkana',
+    'Struktur Molekul',
+    'Reaktivitas Kimia',
+  ]
+
+  const handleSelectModule = (slug: string) => {
+    setSearchParams({ modul: slug })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleBackToCatalog = () => {
+    setSearchParams({})
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // If a module is active, show the detailed lesson view
+  if (activeModuleSlug && LESSON_DETAILS[activeModuleSlug]) {
+    const activeLesson = LESSON_DETAILS[activeModuleSlug]
+    const allSlugs = LESSON_MODULES.map((m) => m.slug)
+    const currentIndex = allSlugs.indexOf(activeModuleSlug)
+    const prevSlug = currentIndex > 0 ? allSlugs[currentIndex - 1] : undefined
+    const nextSlug = currentIndex < allSlugs.length - 1 ? allSlugs[currentIndex + 1] : undefined
+
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <LessonDetailView
+          lesson={activeLesson}
+          onBack={handleBackToCatalog}
+          onSelectModule={handleSelectModule}
+          prevSlug={prevSlug}
+          nextSlug={nextSlug}
+        />
+      </div>
+    )
+  }
 
   const filteredModules = LESSON_MODULES.filter((module) => {
     const matchesSearch =
@@ -43,7 +85,7 @@ export default function MaterialsPage() {
         </h1>
         <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
           Pelajari materi senyawa karbon mulai dari dasar pembentukan ikatan kovalen, tata nama IUPAC,
-          hingga reaksi organik dan identifikasi gugus fungsi.
+          hingga reaksi organik dan identifikasi gugus fungsi secara terstruktur.
         </p>
       </div>
 
@@ -81,64 +123,60 @@ export default function MaterialsPage() {
 
       {/* Module Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredModules.map((module) => {
-          const isHighlighted = initialModul === module.slug
-          return (
-            <div
-              key={module.id}
-              className={`bg-white rounded-3xl border p-6 flex flex-col justify-between shadow-xs transition-all hover:shadow-md ${
-                isHighlighted ? 'border-[#1DAA9A] ring-2 ring-teal-500/20' : 'border-slate-200/90'
-              }`}
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60">
-                    Modul {module.moduleNumber}
-                  </span>
-                  <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {module.estimatedMinutes} Menit
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="font-extrabold text-lg text-[#101C3A]">{module.title}</h3>
-                  <p className="text-xs font-medium text-slate-500 mt-0.5">{module.subtitle}</p>
-                </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed">{module.description}</p>
-
-                {/* Topics List */}
-                <div className="space-y-2 pt-3 border-t border-slate-100">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Cakupan Bahasan:
-                  </span>
-                  <ul className="space-y-1.5">
-                    {module.topics.map((t, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-xs text-slate-600">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#1DAA9A] mt-0.5 shrink-0" />
-                        <span className="line-clamp-2">{t}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+        {filteredModules.map((module) => (
+          <div
+            key={module.id}
+            className="bg-white rounded-3xl border border-slate-200/90 p-6 flex flex-col justify-between shadow-xs transition-all hover:shadow-md hover:border-slate-300"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60 inline-flex items-center gap-1">
+                  <Atom className="w-3 h-3 text-[#1DAA9A]" />
+                  Modul {module.moduleNumber}
+                </span>
+                <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  {module.estimatedMinutes} Menit
+                </span>
               </div>
 
-              <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-mono font-bold text-slate-500">
-                  {module.keyFormula}
+              <div>
+                <h3 className="font-extrabold text-lg text-[#101C3A]">{module.title}</h3>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">{module.subtitle}</p>
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed">{module.description}</p>
+
+              {/* Topics List */}
+              <div className="space-y-2 pt-3 border-t border-slate-100">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Cakupan Bahasan:
                 </span>
-                <Link
-                  to={`/materi?modul=${module.slug}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-white text-xs font-bold transition-all shadow-2xs"
-                >
-                  <span>Pelajari</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <ul className="space-y-1.5">
+                  {module.topics.map((t, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-slate-600">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#1DAA9A] mt-0.5 shrink-0" />
+                      <span className="line-clamp-2">{t}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-          )
-        })}
+
+            <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-mono font-bold text-slate-500">
+                {module.keyFormula}
+              </span>
+              <button
+                onClick={() => handleSelectModule(module.slug)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-white text-xs font-bold transition-all shadow-2xs cursor-pointer"
+              >
+                <span>Pelajari Materi</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
