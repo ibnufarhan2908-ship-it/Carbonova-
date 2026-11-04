@@ -15,6 +15,11 @@ import { QUIZ_QUESTIONS } from '../data/questions'
 import { useQuizHistory } from '../hooks/useQuizHistory'
 import QuizHistoryView from '../components/quiz/QuizHistoryView'
 import type { QuizResult, QuizAnswerRecord } from '../types/quiz'
+import {
+  getSavedQuizAnswers,
+  saveQuizAnswers,
+  clearSavedQuizAnswers,
+} from '../utils/quizStorage'
 
 export default function QuizPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -27,7 +32,10 @@ export default function QuizPage() {
   // Quiz state
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua Topik')
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
+  // Ambil jawaban tersimpan langsung dari localStorage key 'quiz-answers' saat pertama kali dimuat / refresh
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>(() =>
+    getSavedQuizAnswers()
+  )
   const [isSubmitted, setIsSubmitted] = useState(false)
   const hasSavedRef = useRef(false)
 
@@ -54,10 +62,15 @@ export default function QuizPage() {
 
   const handleSelectOption = (optionIndex: number) => {
     if (!isSubmitted) {
-      setSelectedAnswers((prev) => ({
-        ...prev,
-        [currentQuestionIndex]: optionIndex,
-      }))
+      setSelectedAnswers((prev) => {
+        const nextAnswers = {
+          ...prev,
+          [currentQuestionIndex]: optionIndex,
+        }
+        // Simpan langsung ke localStorage dengan key quiz-answers setiap kali user memilih jawaban
+        saveQuizAnswers(nextAnswers)
+        return nextAnswers
+      })
     }
   }
 
@@ -67,7 +80,7 @@ export default function QuizPage() {
   ).length
   const scorePercent = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0
 
-  // Submit quiz and automatically save to localStorage
+  // Submit quiz and automatically save to localStorage history
   const handleSubmitQuiz = () => {
     if (hasSavedRef.current) return
     setIsSubmitted(true)
@@ -108,7 +121,9 @@ export default function QuizPage() {
     saveResult(newResult)
   }
 
+  // Hapus jawaban dari localStorage dan reset status kuis
   const handleResetQuiz = () => {
+    clearSavedQuizAnswers()
     setSelectedAnswers({})
     setIsSubmitted(false)
     setCurrentQuestionIndex(0)
@@ -116,6 +131,7 @@ export default function QuizPage() {
   }
 
   const handleSwitchCategory = (cat: string) => {
+    if (cat === selectedCategory) return
     setSelectedCategory(cat)
     handleResetQuiz()
   }
@@ -228,11 +244,12 @@ export default function QuizPage() {
 
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={handleResetQuiz}
                     className="px-4 py-2.5 rounded-xl bg-white text-[#101C3A] text-xs font-bold hover:bg-slate-100 flex items-center gap-1.5 transition-colors shadow-xs"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    Ulangi Kuis
+                    Reset / Ulangi Kuis
                   </button>
 
                   <button
@@ -262,14 +279,27 @@ export default function QuizPage() {
           )}
 
           {/* Progress Bar & Question Counter */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-600">
-              <span>
-                Soal {currentQuestionIndex + 1} dari {totalQuestions}
-              </span>
-              <span className="text-teal-700 font-mono">
-                {Object.keys(selectedAnswers).length}/{totalQuestions} Terjawab
-              </span>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-600">
+              <div className="flex items-center gap-2">
+                <span>
+                  Soal {currentQuestionIndex + 1} dari {totalQuestions}
+                </span>
+                <span className="text-teal-700 font-mono bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/60">
+                  {Object.keys(selectedAnswers).length}/{totalQuestions} Terjawab
+                </span>
+              </div>
+
+              {/* Tombol Reset / Ulangi Kuis di atas */}
+              <button
+                type="button"
+                onClick={handleResetQuiz}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold transition-colors border border-slate-200 hover:border-rose-200"
+                title="Hapus jawaban di localStorage dan ulangi kuis dari awal"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset / Ulangi Kuis
+              </button>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
               <div
@@ -331,6 +361,7 @@ export default function QuizPage() {
                   return (
                     <button
                       key={idx}
+                      type="button"
                       onClick={() => handleSelectOption(idx)}
                       disabled={isSubmitted}
                       className={`w-full text-left p-4 rounded-2xl border text-xs sm:text-sm font-medium transition-all flex items-start gap-3 ${optionClasses}`}
@@ -366,8 +397,9 @@ export default function QuizPage() {
               )}
 
               {/* Pagination Navigation */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <button
+                  type="button"
                   onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
                   disabled={currentQuestionIndex === 0}
                   className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border ${
@@ -380,26 +412,40 @@ export default function QuizPage() {
                   Sebelumnya
                 </button>
 
-                {currentQuestionIndex < totalQuestions - 1 ? (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() =>
-                      setCurrentQuestionIndex((prev) => Math.min(totalQuestions - 1, prev + 1))
-                    }
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101C3A] text-white text-xs font-bold hover:bg-[#182852] transition-colors"
+                    type="button"
+                    onClick={handleResetQuiz}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors"
+                    title="Reset / Ulangi Kuis"
                   >
-                    Selanjutnya
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reset / Ulangi Kuis
                   </button>
-                ) : (
-                  !isSubmitted && (
+
+                  {currentQuestionIndex < totalQuestions - 1 ? (
                     <button
-                      onClick={handleSubmitQuiz}
-                      className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#1DAA9A] text-white text-xs font-bold hover:bg-[#15887B] transition-colors shadow-sm"
+                      type="button"
+                      onClick={() =>
+                        setCurrentQuestionIndex((prev) => Math.min(totalQuestions - 1, prev + 1))
+                      }
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101C3A] text-white text-xs font-bold hover:bg-[#182852] transition-colors"
                     >
-                      Kumpulkan Jawaban
+                      Selanjutnya
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
-                  )
-                )}
+                  ) : (
+                    !isSubmitted && (
+                      <button
+                        type="button"
+                        onClick={handleSubmitQuiz}
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#1DAA9A] text-white text-xs font-bold hover:bg-[#15887B] transition-colors shadow-sm"
+                      >
+                        Kumpulkan Jawaban
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           )}

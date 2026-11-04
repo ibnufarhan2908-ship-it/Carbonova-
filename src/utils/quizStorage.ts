@@ -1,6 +1,63 @@
 import type { QuizResult, QuizStatistics } from '../types/quiz'
 
 const STORAGE_KEY = 'carbonova_quiz_history_v1'
+export const QUIZ_ANSWERS_KEY = 'quiz-answers'
+
+/**
+ * Mendapatkan jawaban kuis aktif yang tersimpan dari localStorage
+ */
+export function getSavedQuizAnswers(): Record<number, number> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const rawData = localStorage.getItem(QUIZ_ANSWERS_KEY)
+    if (!rawData) return {}
+    const parsed = JSON.parse(rawData)
+    if (Array.isArray(parsed)) {
+      const result: Record<number, number> = {}
+      parsed.forEach((val, idx) => {
+        if (typeof val === 'number') result[idx] = val
+      })
+      return result
+    }
+    if (parsed && typeof parsed === 'object') {
+      const result: Record<number, number> = {}
+      for (const [key, val] of Object.entries(parsed)) {
+        const numKey = Number(key)
+        if (!isNaN(numKey) && typeof val === 'number') {
+          result[numKey] = val
+        }
+      }
+      return result
+    }
+  } catch (error) {
+    console.error('Gagal membaca jawaban kuis dari localStorage:', error)
+  }
+  return {}
+}
+
+/**
+ * Menyimpan jawaban kuis aktif langsung ke localStorage
+ */
+export function saveQuizAnswers(answers: Record<number, number>): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(QUIZ_ANSWERS_KEY, JSON.stringify(answers))
+  } catch (error) {
+    console.error('Gagal menyimpan jawaban kuis ke localStorage:', error)
+  }
+}
+
+/**
+ * Menghapus jawaban kuis aktif dari localStorage
+ */
+export function clearSavedQuizAnswers(): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(QUIZ_ANSWERS_KEY)
+  } catch (error) {
+    console.error('Gagal menghapus jawaban kuis dari localStorage:', error)
+  }
+}
 
 /**
  * Mendapatkan seluruh riwayat kuis dari localStorage
@@ -120,4 +177,3 @@ export function getQuizStatistics(): QuizStatistics {
     latestQuizDate: latest ? latest.completedAt : null,
   }
 }
-

@@ -12,6 +12,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Karbon cenderung menangkap 4 elektron dari atom logam untuk membentuk ion karbida C⁴⁻ stabil',
       'Karbon memiliki 4 elektron valensi dan menggunakan pasangan elektron bersama untuk membentuk 4 ikatan kovalen stabil (tetravalensi)',
       'Karbon hanya dapat membentuk ikatan kovalen tunggal dengan atom hidrogen saja',
+      'Karbon hanya memanfaatkan 2 elektron pada orbital 2p untuk berikatan kovalen sehingga secara alami bervalensi dua',
     ],
     correctIndex: 2,
     explanation:
@@ -31,6 +32,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Atom karbon tidak memiliki neutron sehingga massa intinya lebih ringan',
       'Silikon memiliki elektronegativitas yang jauh lebih tinggi daripada karbon sehingga ikatannya rapuh',
       'Atom karbon bersifat logam sedangkan silikon merupakan gas mulia',
+      'Atom karbon memiliki orbital d kosong pada kulit valensinya yang mampu menstabilkan rantai panjang melalui resonansi',
     ],
     correctIndex: 0,
     explanation:
@@ -52,6 +54,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Zat X: Alkena, Zat Y: Alkana, Zat Z: Alkuna',
       'Zat X: Alkuna, Zat Y: Alkena, Zat Z: Alkana',
       'Ketiga zat merupakan alkana jenuh karena memiliki jumlah atom C yang sama',
+      'Zat X: Alkana (CnH2n+2), Zat Y: Alkuna (CnH2n-2), Zat Z: Alkena (CnH2n)',
     ],
     correctIndex: 0,
     explanation:
@@ -71,6 +74,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       '2 atom C kuartener dan 1 atom C tersier',
       '1 atom C kuartener dan 2 atom C tersier',
       '0 atom C kuartener dan 3 atom C tersier',
+      '2 atom C kuartener dan 2 atom C tersier',
     ],
     correctIndex: 0,
     explanation:
@@ -91,6 +95,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       '2-metil-4-pentena',
       '4-metil-pentana',
       '2-isopropil-etena',
+      '4-metil-2-pentena',
     ],
     correctIndex: 0,
     explanation:
@@ -109,6 +114,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       '2-metil-3-pentuna',
       '4,4-dimetil-2-butuna',
       'isopropil-metil-asetilena',
+      '2-metil-4-pentuna',
     ],
     correctIndex: 0,
     explanation:
@@ -130,6 +136,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Senyawa A adalah alkohol dan Senyawa B adalah asam karboksilat',
       'Senyawa A adalah ester dan Senyawa B adalah eter',
       'Senyawa A adalah keton sedangkan Senyawa B adalah alkena',
+      'Senyawa A adalah keton (propanon, –CO–) dan Senyawa B adalah aldehida (propanal, –CHO)',
     ],
     correctIndex: 0,
     explanation:
@@ -149,6 +156,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Eter dengan gugus fungsi alkoksi (–O–)',
       'Aldehida dengan gugus fungsi formil (–CHO)',
       'Asam karboksilat dengan gugus karboksil (–COOH)',
+      'Keton dengan gugus fungsi karbonil (–CO–)',
     ],
     correctIndex: 0,
     explanation:
@@ -170,6 +178,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'n-Butana memiliki ikatan hidrogen antarmolekul sedangkan isobutana tidak',
       'Isobutana memiliki massa molekul (Mr) yang lebih kecil daripada n-butana',
       'Ikatan kovalen C–C pada isobutana lebih mudah terputus saat dipanaskan',
+      'n-Butana memiliki kepolaran molekul permanen yang menghasilkan interaksi dipol-dipol kuat antarsesama molekulnya',
     ],
     correctIndex: 0,
     explanation:
@@ -187,6 +196,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Etanol (CH₃–CH₂–OH) dan Dimetil eter (CH₃–O–CH₃)',
       'n-pentana dan 2-metilbutana',
       'Propena dan Siklopropana',
+      'cis-2-butena dan trans-2-butena',
     ],
     correctIndex: 0,
     explanation:
@@ -208,6 +218,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Etanol memiliki ikatan kovalen C–C yang jauh lebih kuat daripada ikatan C–O pada eter',
       'Dimetil eter mudah terbakar spontan di udara sehingga menguap lebih cepat',
       'Massa molekul relatif etanol lebih besar daripada dimetil eter',
+      'Dimetil eter membentuk ikatan hidrogen intramolekul sehingga melemahkan interaksi gaya tarik antarmolekulnya',
     ],
     correctIndex: 0,
     explanation:
@@ -227,6 +238,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Heksena mengalami reaksi pembakaran sempurna dengan bromin membentuk gas CO₂',
       'Heksana pada tabung 2 tidak berwarna karena telah mengikat seluruh atom bromin',
       'Reaksi pada tabung 1 adalah reaksi eliminasi yang melepaskan gas hidrogen',
+      'Alkena pada tabung 1 mengalami reaksi substitusi cepat yang menggantikan atom hidrogen tanpa pemutusan ikatan rangkap',
     ],
     correctIndex: 0,
     explanation:
@@ -248,6 +260,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Hipotesis BENAR, karena semua atom oksigen mampu mendonorkan ikatan hidrogen kuat ke segala arah',
       'Hipotesis BENAR, karena keberadaan oksigen selalu melipatgandakan berat molekul senyawa',
       'Hipotesis SALAH, karena atom oksigen bersifat nonpolar dan selalu menurunkan titik didih',
+      'Hipotesis BENAR, karena keelektronegatifan atom oksigen selalu menghasilkan tarikan dipol permanen yang menaikkan titik didih seluruh kelompok senyawa beroksigen',
     ],
     correctIndex: 0,
     explanation:
@@ -267,6 +280,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Gas CO bereaksi dengan air di udara menghasilkan asam sulfat pekat yang korosif',
       'Pembakaran tidak sempurna menyerap seluruh energi tubuh manusia secara eksotermik',
       'Jelaga karbon mengubah gas oksigen di ruangan menjadi gas klorin beracun',
+      'Gas CO bereaksi dengan uap air dalam alveolus paru-paru menghasilkan asam karbonat pekat yang merusak saluran pernapasan',
     ],
     correctIndex: 0,
     explanation:
