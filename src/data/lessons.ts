@@ -54,7 +54,8 @@ export const LESSON_MODULES: LessonModule[] = [
       'Penomoran rantai dari ujung terdekat dengan cabang/ikatan rangkap',
       'Penamaan gugus cabang alkil (–CH₃ metil, –C₂H₅ etil)',
       'Prioritas penamaan senyawa rantai bercabang ganda',
-      'Tata nama alkena dan alkuna dengan posisi ikatan rangkap'
+      'Tata nama alkena dan alkuna dengan posisi ikatan rangkap',
+      'Eksplorasi Konformer 3D PubChem (3-Metil-1-pentena, 2-metilbutana, dll)'
     ],
     keyFormula: '[Nomor]-[Cabang][Rantai Induk]',
     iconName: 'FileText',

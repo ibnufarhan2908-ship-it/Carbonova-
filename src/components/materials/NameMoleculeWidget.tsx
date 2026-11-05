@@ -56,6 +56,24 @@ const CHALLENGES: MoleculeNamingChallenge[] = [
     explanation:
       'Gugus karbonil (C=O) berada pada atom C nomor 2 dari rantai butana (4 karbon). Penomoran dari kiri memberi nomor 2 (lebih kecil daripada penomoran dari kanan yang menghasilkan nomor 3). Nama IUPAC: 2-butanon.',
   },
+  {
+    id: 'ch-6',
+    formula: 'CH₂=CH–CH(CH₃)–CH₂–CH₃',
+    structureType: 'Alkena Bercabang (PubChem CID: 12969)',
+    options: ['3-metil-1-pentena', '3-metil-4-pentena', '2-etil-1-butena', '3-metilpentana'],
+    correctIndex: 0,
+    explanation:
+      'Rantai induk terpanjang yang memuat ikatan rangkap dua C=C memiliki 5 atom C (pentena). Penomoran wajib dimulai dari ujung ikatan rangkap (=CH₂ sebagai C1), sehingga cabang metil (–CH₃) berada di posisi C3. Jadi nama resminya adalah 3-metil-1-pentena.',
+  },
+  {
+    id: 'ch-7',
+    formula: 'CH₃–C(CH₃)₂–CH₃',
+    structureType: 'Alkana Cabang Kembar Geminal (PubChem CID: 10041)',
+    options: ['2,2-dimetilpropana', '2-dimetilpropana', 'dimetilpropana', 'neopentena'],
+    correctIndex: 0,
+    explanation:
+      'Rantai utama 3 atom C (propana). Terdapat dua cabang metil pada atom C yang sama yaitu C2. Aturan IUPAC mewajibkan penulisan nomor lokasi bagi masing-masing cabang serta awalan di-: 2,2-dimetilpropana.',
+  },
 ]
 
 export default function NameMoleculeWidget() {

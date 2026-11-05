@@ -143,7 +143,7 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
     subtitle: 'Aturan IUPAC Sistematis untuk Alkana, Alkena, dan Alkuna',
     category: 'Nomenklatur Kimia',
     introduction:
-      'Untuk membedakan jutaan struktur senyawa organik di seluruh dunia, International Union of Pure and Applied Chemistry (IUPAC) menetapkan sistem penamaan baku. Pelajari 4 langkah praktis dalam menamai senyawa karbon.',
+      'Untuk membedakan jutaan struktur senyawa organik di seluruh dunia, International Union of Pure and Applied Chemistry (IUPAC) menetapkan sistem penamaan baku. Pelajari 4 langkah praktis dalam menamai senyawa karbon dan amati visualisasi struktur 3D nyata dari PubChem.',
     interactiveWidgetType: 'name-molecule',
     sections: [
       {
@@ -176,16 +176,25 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
           'Format penulisan baku: [Nomor Cabang]-[Nama Cabang][Nomor Ikatan Rangkap]-[Nama Rantai Induk]',
       },
       {
-        title: '4. Contoh Analisis Kasus Penamaan',
+        title: '4. Contoh Analisis Kasus Penamaan Rantai Terpanjang',
         content:
-          'Mari analisis rumus struktur: CH₃–CH(CH₃)–CH(C₂H₅)–CH₂–CH₃\n1. Rantai terpanjang: 6 atom C (Heksana), bukan 5!\n2. Penomoran dari kiri: Cabang metil ada di C3 dan etil di C4 (nomor terendah).\n3. Nama IUPAC yang benar: 4-etil-3-metilheksana.',
-        formula: 'Hasil Akhir: 4-etil-3-metilheksana',
+          'Mari analisis rumus struktur: CH₃–CH(CH₃)–CH(C₂H₅)–CH₂–CH₃\n1. Rantai terpanjang: 6 atom C (Heksana), bukan 5!\n2. Penomoran dari kiri: Cabang metil ada di C3 dan etil di C4 (nomor terendah).\n3. Nama IUPAC yang benar: 3-etil-4-metilheksana (mengikuti urutan abjad etil sebelum metil).',
+        formula: 'Hasil Akhir: 3-etil-4-metilheksana',
+      },
+      {
+        title: '5. Analisis 3D & Studi Kasus Alkena Bercabang: 3-Metil-1-pentena (PubChem CID: 12969)',
+        content:
+          'Perhatikan rumus struktur: CH₂=CH–CH(CH₃)–CH₂–CH₃\n\n1. Rantai Induk: Rantai terpanjang yang memuat ikatan rangkap dua C=C memiliki 5 atom C (pentena).\n2. Prioritas Penomoran: Penomoran wajib dimulai dari ujung kiri terdekat dengan ikatan rangkap (=CH₂ sebagai C1), sehingga ikatan rangkap berada di nomor 1.\n3. Posisi Cabang: Cabang metil (–CH₃) terletak pada atom C nomor 3.\n4. Nama IUPAC Baku: 3-metil-1-pentena (atau 3-methylpent-1-ene).\n\n⚠️ Mengapa BUKAN 3-metil-4-pentena? Karena aturan baku IUPAC menetapkan bahwa ikatan rangkap (–ena) memiliki prioritas penomoran lebih tinggi dibanding gugus cabang alkil!\n\n💡 Kamu dapat memutar dan mengeksplorasi struktur konformer 3D interaktif senyawa ini pada viewer di bawah.',
+        formula: 'Rumus Terkondensasi: CH₂=CH–CH(CH₃)–CH₂–CH₃  →  3-metil-1-pentena (C₆H₁₂)',
+        highlight:
+          'Prinsip Utama Alkena/Alkuna Bercabang: Ikatan rangkap dua atau tiga WAJIB menjadi bagian dari rantai induk dan WAJIB mendapatkan nomor lokan serendah mungkin.',
       },
     ],
     summaryPoints: [
       'Cari rantai karbon terpanjang yang memuat gugus prioritas / ikatan rangkap.',
       'Nomori rantai dari ujung terdekat dengan ikatan rangkap atau cabang.',
       'Tuliskan cabang secara alfabetis dengan awalan pengali (di, tri, tetra).',
+      'Pada alkena dan alkuna bercabang (seperti 3-metil-1-pentena), ikatan rangkap selalu diutamakan memperoleh nomor terendah dibanding cabang.',
       'Gunakan tanda hubung (-) antara angka dan huruf, serta tanda koma (,) di antara angka.',
     ],
   },

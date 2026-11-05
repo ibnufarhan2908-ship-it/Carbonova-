@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { Compass, Search } from 'lucide-react'
+import { useSearchParams, Link } from 'react-router-dom'
+import { Compass, Search, Sparkles, ArrowRight } from 'lucide-react'
 import MoleculeViewer2D from '../components/molecules/MoleculeViewer2D'
 import { MOLECULES_DATA } from '../data/molecules'
 
@@ -200,6 +200,28 @@ export default function MoleculeExplorerPage() {
             <p className="text-slate-600 leading-relaxed italic">
               "{currentMolecule.dailyUses}"
             </p>
+          </div>
+
+          {/* Link to 3D Conformer & IUPAC Module */}
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-[#101C3A] to-[#182852] text-white space-y-3 shadow-md">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-teal-500/20 text-[#5DE0E6]">
+                <Sparkles className="w-4 h-4" />
+              </span>
+              <span className="font-bold text-sm text-white">
+                Ingin Mengamati Konformer 3D PubChem & Aturan Tata Nama?
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Pelajari langkah lengkap penamaan IUPAC dan putar struktur konformer 3D interaktif senyawa bercabang seperti <strong>3-metil-1-pentena</strong>, <strong>2-metilbutana</strong>, dan lainnya langsung di Modul Pembelajaran.
+            </p>
+            <Link
+              to="/materi?modul=tata-nama-senyawa-karbon"
+              className="inline-flex items-center gap-2 text-xs font-bold text-[#5DE0E6] hover:text-white transition-colors"
+            >
+              <span>Buka Modul Tata Nama Senyawa Karbon</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>

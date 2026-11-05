@@ -1,6 +1,7 @@
 import { BookOpen, ArrowLeft, ArrowRight, CheckCircle2, Atom, Sparkles } from 'lucide-react'
 import type { DetailedLesson } from '../../types/chemistry'
 import NameMoleculeWidget from './NameMoleculeWidget'
+import Conformer3DViewer from './Conformer3DViewer'
 
 interface LessonDetailViewProps {
   lesson: DetailedLesson
@@ -139,6 +140,13 @@ export default function LessonDetailView({
           </section>
         ))}
       </div>
+
+      {/* Embedded 3D Conformer Viewer (PubChem Exploration) */}
+      {lesson.slug === 'tata-nama-senyawa-karbon' && (
+        <section className="space-y-3">
+          <Conformer3DViewer />
+        </section>
+      )}
 
       {/* Embedded Interactive Widget for Name This Molecule */}
       {lesson.interactiveWidgetType === 'name-molecule' && (
