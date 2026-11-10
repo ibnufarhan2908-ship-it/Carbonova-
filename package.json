@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test:auth": "node --experimental-strip-types test_auth_lms.mjs",
+    "test:registration": "node --experimental-strip-types test_registration.mjs",
+    "test": "node --experimental-strip-types test_registration.mjs && node --experimental-strip-types test_auth_lms.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

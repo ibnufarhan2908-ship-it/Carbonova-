@@ -8,6 +8,7 @@ import CarbonLabPage from './pages/CarbonLabPage'
 import QuizPage from './pages/QuizPage'
 import AboutPage from './pages/AboutPage'
 import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
 import TeacherDashboardPage from './pages/teacher/TeacherDashboardPage'
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
@@ -46,6 +47,16 @@ export default function App() {
             element={
               <PublicRoute>
                 <LoginPage />
+              </PublicRoute>
+            }
+          />
+
+          {/* Public Route Register - Pendaftaran akun baru Guru dan Siswa */}
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <RegisterPage />
               </PublicRoute>
             }
           />

@@ -1,14 +1,184 @@
-import type { AuthSession, User } from '../types/auth.ts'
-import { verifyPassword, generateSessionToken } from './crypto.ts'
+import type { AuthSession, User, RegisterPayload, AuthResponse, StoredUser } from '../types/auth.ts'
+import { verifyPassword, generateSessionToken, generateSalt, hashPassword } from './crypto.ts'
 import {
   initDatabase,
   getStoredUserByEmail,
   getUserById,
   updateUserLastLogin,
+  isEmailRegistered,
+  saveNewUser,
 } from './db.ts'
 
 const SESSION_STORAGE_KEY = 'carbonova_auth_session_v1'
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000 // 24 jam
+
+// Kode rahasia undangan guru default (dapat disesuaikan di server backend / env)
+const DEFAULT_TEACHER_CODE = 'GURU-CARBONOVA-2026'
+
+/**
+ * Registrasi Pengguna Baru (Guru atau Siswa)
+ * Menjalankan validasi server-grade terhadap format data, kekuatan kata sandi,
+ * keunikan email, dan keabsahan kode undangan guru.
+ */
+export async function register(payload: RegisterPayload): Promise<AuthResponse> {
+  await initDatabase()
+
+  const { name, email, password, confirmPassword, role, invitationCode } = payload
+
+  // 1. Validasi Kelengkapan Field
+  if (!name || !name.trim()) {
+    return { success: false, error: 'Nama lengkap wajib diisi.' }
+  }
+  if (!email || !email.trim()) {
+    return { success: false, error: 'Alamat email wajib diisi.' }
+  }
+  if (!password) {
+    return { success: false, error: 'Kata sandi wajib diisi.' }
+  }
+
+  // 2. Validasi Format Email
+  const cleanEmail = email.trim().toLowerCase()
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(cleanEmail)) {
+    return { success: false, error: 'Format alamat email tidak valid.' }
+  }
+
+  // 3. Validasi Kecocokan Kata Sandi
+  if (confirmPassword !== undefined && password !== confirmPassword) {
+    return { success: false, error: 'Konfirmasi kata sandi tidak cocok dengan kata sandi.' }
+  }
+
+  // 4. Standar Keamanan Kata Sandi (Minimal 8 karakter, kombinasi huruf dan angka)
+  if (password.length < 8) {
+    return { success: false, error: 'Kata sandi minimal 8 karakter.' }
+  }
+  if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+    return { success: false, error: 'Kata sandi harus mengandung kombinasi huruf dan angka.' }
+  }
+
+  // 5. Coba daftarkan melalui Backend REST API jika endpoint aktif
+  let apiSucceeded = false
+  if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await response.json()
+      if (response.ok && data.success && data.user) {
+        apiSucceeded = true
+        // Sinkronisasi data user dan sesi ke client
+        const safeUser: User = data.user
+        const session: AuthSession = {
+          token: data.token || generateSessionToken(),
+          user: safeUser,
+          expiresAt: data.expiresAt || Date.now() + SESSION_DURATION_MS,
+        }
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
+
+        // Simpan juga ke cache lokal agar langsung terbaca di halaman internal
+        const salt = generateSalt()
+        const passwordHash = await hashPassword(password, salt)
+        saveNewUser({
+          ...safeUser,
+          passwordHash,
+          salt,
+        })
+
+        return { success: true, user: safeUser, token: session.token }
+      } else if (!response.ok && data.error) {
+        // Jika backend menolak (misal email duplikat atau kode undangan salah), langsung return error dari backend
+        return { success: false, error: data.error }
+      }
+    } catch {
+      // Backend mungkin tidak merespons (misal saat testing unit), lanjutkan ke validasi local engine
+    }
+  }
+
+  if (apiSucceeded) {
+    return { success: true }
+  }
+
+  // 6. Validasi Keunikan Email (Lokal Engine / Fallback)
+  if (isEmailRegistered(cleanEmail)) {
+    return {
+      success: false,
+      error: 'Alamat email ini sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.',
+    }
+  }
+
+  // 7. Validasi Khusus Role Guru (Teacher) dengan Kode Undangan
+  let assignedRole: 'teacher' | 'student' = 'student'
+  if (role === 'teacher') {
+    const cleanCode = (invitationCode || '').trim()
+    if (!cleanCode) {
+      return {
+        success: false,
+        error: 'Kode undangan guru wajib diisi untuk registrasi akun tenaga pendidik.',
+      }
+    }
+
+    const globalObj = globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }
+    const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env
+    const expectedCode =
+      globalObj.process?.env?.TEACHER_INVITATION_CODE ||
+      metaEnv?.VITE_TEACHER_INVITATION_CODE ||
+      DEFAULT_TEACHER_CODE
+
+    if (cleanCode !== expectedCode) {
+      return {
+        success: false,
+        error: 'Kode undangan guru tidak valid. Hubungi pihak sekolah untuk mendapatkan kode resmi.',
+      }
+    }
+    assignedRole = 'teacher'
+  } else {
+    assignedRole = 'student'
+  }
+
+  // 8. Hashing Kata Sandi Menggunakan PBKDF2 & Salt Kriptografis Unik
+  const salt = generateSalt()
+  const passwordHash = await hashPassword(password, salt)
+  const newId = `usr-${assignedRole}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`
+
+  const newUser: StoredUser = {
+    id: newId,
+    name: name.trim(),
+    email: cleanEmail,
+    role: assignedRole,
+    status: 'active',
+    passwordHash,
+    salt,
+    createdAt: new Date().toISOString(),
+  }
+
+  saveNewUser(newUser)
+
+  // 9. Buat Sesi Baru Otomatis Setelah Registrasi
+  const token = generateSessionToken()
+  const safeUser: User = {
+    id: newUser.id,
+    name: newUser.name,
+    email: newUser.email,
+    role: newUser.role,
+    status: newUser.status,
+    createdAt: newUser.createdAt,
+    lastLoginAt: new Date().toISOString(),
+  }
+
+  const session: AuthSession = {
+    token,
+    user: safeUser,
+    expiresAt: Date.now() + SESSION_DURATION_MS,
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
+  }
+
+  return { success: true, user: safeUser, token }
+}
 
 export async function login(
   email: string,
@@ -21,14 +191,38 @@ export async function login(
     return { success: false, error: 'Email dan password wajib diisi.' }
   }
 
+  // Coba autentikasi via Backend API terlebih dahulu
+  if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password: pass }),
+      })
+      const data = await response.json()
+      if (response.ok && data.success && data.user) {
+        const safeUser: User = data.user
+        const session: AuthSession = {
+          token: data.token || generateSessionToken(),
+          user: safeUser,
+          expiresAt: data.expiresAt || Date.now() + SESSION_DURATION_MS,
+        }
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
+        return { success: true, user: safeUser }
+      }
+    } catch {
+      // Backend offline, fallback ke database lokal
+    }
+  }
+
   const storedUser = getStoredUserByEmail(cleanEmail)
   if (!storedUser) {
-    return { success: false, error: 'Email atau password tidak sesuai.' }
+    return { success: false, error: 'Email atau kata sandi tidak sesuai.' }
   }
 
   const isPasswordValid = await verifyPassword(pass, storedUser.salt, storedUser.passwordHash)
   if (!isPasswordValid) {
-    return { success: false, error: 'Email atau password tidak sesuai.' }
+    return { success: false, error: 'Email atau kata sandi tidak sesuai.' }
   }
 
   if (storedUser.status !== 'active') {
@@ -103,4 +297,3 @@ export function getCurrentUser(): User | null {
   const session = getSession()
   return session ? session.user : null
 }
-

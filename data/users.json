@@ -1,0 +1,43 @@
+[
+  {
+    "id": "usr-teacher-01",
+    "name": "Guru Demo",
+    "email": "guru.demo@carbonova.test",
+    "role": "teacher",
+    "status": "active",
+    "passwordHash": "2eee97ed7137d71fd55dcaedadf7f6fca1cffa5c9f2100ba9a8d0bce436edfaa",
+    "salt": "52c6f84bafbaa467b9b30bbeb8b96a4d",
+    "createdAt": "2026-10-01T08:00:00.000Z"
+  },
+  {
+    "id": "usr-student-01",
+    "name": "Siswa Demo",
+    "email": "siswa.demo@carbonova.test",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "9abde7753188a2dad3691292973c5fa3655d4993d20c6a260ddcd47c9804a388",
+    "salt": "0daa14123fd3f80b2b5c36af2fa5d906",
+    "createdAt": "2026-10-05T09:30:00.000Z",
+    "lastLoginAt": "2026-11-10T10:09:33.380Z"
+  },
+  {
+    "id": "usr-student-mwaj4tww-1a5ac5",
+    "name": "Siswa Backend Api",
+    "email": "siswa.backend@sekolah.sch.id",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "ca9ae8e10f732eb0a802d9dbeb1f81e85fc704cb24c42001c9701b9edd1d7289",
+    "salt": "a702c877dc81c78d059f56ca28a2a535",
+    "createdAt": "2026-11-10T10:10:44.720Z"
+  },
+  {
+    "id": "usr-student-mwaj98j5-842632",
+    "name": "Siswa Backend Api",
+    "email": "siswa.backend.1794305650265@sekolah.sch.id",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "d541072b682d929a89db916793f87099533f3106e93252258efa1291683bbca4",
+    "salt": "e6d58c6f382f67fb7905edef90ddb08d",
+    "createdAt": "2026-11-10T10:14:10.289Z"
+  }
+]

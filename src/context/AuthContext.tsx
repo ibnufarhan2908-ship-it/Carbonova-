@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import type { User, UserRole } from '../types/auth'
-import { login as authLogin, logout as authLogout, getSession } from '../services/auth'
-import { initDatabase } from '../services/db'
+import type { User, UserRole, RegisterPayload } from '../types/auth.ts'
+import {
+  login as authLogin,
+  register as authRegister,
+  logout as authLogout,
+  getSession,
+} from '../services/auth.ts'
+import { initDatabase } from '../services/db.ts'
 
 interface AuthContextType {
   user: User | null
@@ -9,6 +14,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>
+  register: (payload: RegisterPayload) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   refreshUser: () => void
 }
@@ -70,6 +76,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  const handleRegister = async (
+    payload: RegisterPayload
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true)
+    try {
+      const res = await authRegister(payload)
+      if (res.success && res.user) {
+        setUser(res.user)
+        return { success: true }
+      }
+      return { success: false, error: res.error || 'Registrasi gagal.' }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleLogout = () => {
     authLogout()
     setUser(null)
@@ -81,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!user,
     isLoading,
     login: handleLogin,
+    register: handleRegister,
     logout: handleLogout,
     refreshUser,
   }
@@ -95,4 +118,3 @@ export function useAuth(): AuthContextType {
   }
   return context
 }
-

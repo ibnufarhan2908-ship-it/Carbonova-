@@ -128,17 +128,31 @@ CREATE POLICY "Students can manage own module progress"
     WITH CHECK (auth.uid() = user_id);
 
 -- ==============================================================================
--- 7. TRIGGER PEMBUATAN PROFIL OTOMATIS SAAT REGISTER SUPABASE AUTH
+-- 7. TRIGGER PEMBUATAN PROFIL & VALIDASI KODE UNDANGAN GURU SAAT REGISTER
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_role public.user_role;
+  v_code text;
+  v_expected_code text := 'GURU-CARBONOVA-2026';
 BEGIN
+  v_role := COALESCE((NEW.raw_user_meta_data->>'role')::public.user_role, 'student'::public.user_role);
+  v_code := COALESCE(NEW.raw_user_meta_data->>'invitation_code', '');
+
+  -- Validasi backend: jika mendaftar sebagai guru, verifikasi kode undangan resmi
+  IF v_role = 'teacher' THEN
+    IF v_code <> v_expected_code THEN
+      RAISE EXCEPTION 'Kode undangan guru tidak valid. Registrasi guru ditolak.';
+    END IF;
+  END IF;
+
   INSERT INTO public.profiles (id, name, email, role)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'name', 'Pengguna Carbonova'),
     NEW.email,
-    COALESCE((NEW.raw_user_meta_data->>'role')::public.user_role, 'student'::public.user_role)
+    v_role
   );
   RETURN NEW;
 END;

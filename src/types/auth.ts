@@ -73,3 +73,21 @@ export interface StudentSummaryStats {
   totalAttempts: number
 }
 
+export interface RegisterPayload {
+  name: string
+  email: string
+  password: string
+  confirmPassword?: string
+  role: UserRole
+  invitationCode?: string
+}
+
+export interface AuthResponse {
+  success: boolean
+  user?: User
+  token?: string
+  error?: string
+  message?: string
+}
+
+

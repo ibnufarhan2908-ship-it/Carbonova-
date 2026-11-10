@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   Atom,
   Mail,
@@ -113,6 +113,19 @@ export default function LoginPage() {
 
         {/* Main Card */}
         <div className="mt-8 bg-white py-8 px-6 sm:px-10 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-200/80">
+          {/* Header Switcher Login / Register */}
+          <div className="flex rounded-2xl bg-slate-100/80 p-1 mb-6 border border-slate-200/60">
+            <div className="flex-1 py-2 text-center text-xs font-bold bg-white text-[#101C3A] rounded-xl shadow-xs">
+              Masuk
+            </div>
+            <Link
+              to="/register"
+              className="flex-1 py-2 text-center text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors rounded-xl"
+            >
+              Daftar Akun Baru
+            </Link>
+          </div>
+
           <div className="mb-6">
             <h2 className="text-xl font-bold text-[#101C3A]">Masuk ke Akun</h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -232,6 +245,16 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
+            </div>
+
+            {/* Link Buat Akun Baru */}
+            <div className="text-center pt-1">
+              <p className="text-xs text-slate-600">
+                Belum memiliki akun?{' '}
+                <Link to="/register" className="font-bold text-teal-700 hover:text-teal-900 hover:underline">
+                  Daftar akun baru di sini →
+                </Link>
+              </p>
             </div>
           </form>
 

@@ -145,6 +145,25 @@ export function getStudents(): User[] {
   return users.filter((u) => u.role === 'student')
 }
 
+export function isEmailRegistered(email: string): boolean {
+  const clean = email.trim().toLowerCase()
+  const users = getStoredItem<StoredUser[]>(USERS_STORAGE_KEY, [])
+  return users.some((u) => u.email.toLowerCase() === clean)
+}
+
+export function saveNewUser(newUser: StoredUser): void {
+  const users = getStoredItem<StoredUser[]>(USERS_STORAGE_KEY, [])
+  const existingIdx = users.findIndex(
+    (u) => u.email.toLowerCase() === newUser.email.toLowerCase()
+  )
+  if (existingIdx !== -1) {
+    users[existingIdx] = newUser
+  } else {
+    users.push(newUser)
+  }
+  setStoredItem(USERS_STORAGE_KEY, users)
+}
+
 export function updateUserLastLogin(userId: string): void {
   const users = getStoredItem<StoredUser[]>(USERS_STORAGE_KEY, [])
   const index = users.findIndex((u) => u.id === userId)
