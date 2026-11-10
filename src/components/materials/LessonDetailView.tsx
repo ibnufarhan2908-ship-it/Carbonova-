@@ -1,6 +1,21 @@
-import { BookOpen, ArrowLeft, ArrowRight, CheckCircle2, Atom, Sparkles } from 'lucide-react'
-import type { DetailedLesson } from '../../types/chemistry'
+import { useState } from 'react'
+import {
+  BookOpen,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Atom,
+  Sparkles,
+  ExternalLink,
+  BookMarked,
+  Rotate3d,
+} from 'lucide-react'
+import type { DetailedLesson, Molecule } from '../../types/chemistry'
 import NameMoleculeWidget from './NameMoleculeWidget'
+import ChainVisualizer from '../ChainVisualizer'
+import Molecule3D from '../molecules/Molecule3D'
+import ChemicalFormula, { formatChemicalText } from '../ChemicalFormula'
+import { MOLECULES_DATA } from '../../data/molecules'
 
 interface LessonDetailViewProps {
   lesson: DetailedLesson
@@ -10,6 +25,16 @@ interface LessonDetailViewProps {
   prevSlug?: string
 }
 
+// Map modules to related featured molecules in the 3D gallery
+const MODULE_MOLECULE_MAP: Record<string, string[]> = {
+  'kekhasan-atom-karbon': ['metana', 'etana', 'etena', 'etuna'],
+  hidrokarbon: ['metana', 'etana', 'propana', 'butana', 'etena', 'etuna'],
+  'tata-nama-senyawa-karbon': ['propana', 'butana', 'etena'],
+  'gugus-fungsi': ['etanol', 'etanal', 'propanon', 'asam-etanoat', 'etil-etanoat'],
+  'isomer-senyawa-karbon': ['butana', 'propana', 'etanol'],
+  'sifat-dan-reaksi': ['metana', 'etena', 'etanol', 'asam-etanoat'],
+}
+
 export default function LessonDetailView({
   lesson,
   onBack,
@@ -17,6 +42,19 @@ export default function LessonDetailView({
   nextSlug,
   prevSlug,
 }: LessonDetailViewProps) {
+  // Find related molecules for this module
+  const relatedMoleculeIds = MODULE_MOLECULE_MAP[lesson.slug] || ['metana', 'etana', 'etanol']
+  const relatedMolecules: Molecule[] = relatedMoleculeIds
+    .map((id) => MOLECULES_DATA.find((m) => m.id === id))
+    .filter((m): m is Molecule => Boolean(m))
+
+  const [selectedMoleculeId, setSelectedMoleculeId] = useState<string>(
+    relatedMolecules[0]?.id || 'metana'
+  )
+
+  const activeMolecule =
+    relatedMolecules.find((m) => m.id === selectedMoleculeId) || relatedMolecules[0]
+
   return (
     <article className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-300">
       {/* Top Navigation */}
@@ -63,17 +101,21 @@ export default function LessonDetailView({
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-extrabold text-[#101C3A] tracking-tight leading-tight">
-          {lesson.title}
+          <ChemicalFormula>{lesson.title}</ChemicalFormula>
         </h1>
-        <p className="text-base sm:text-lg text-slate-600 font-medium">{lesson.subtitle}</p>
+        <p className="text-base sm:text-lg text-slate-600 font-medium">
+          <ChemicalFormula>{lesson.subtitle}</ChemicalFormula>
+        </p>
 
-        {/* Introduction Box */}
+        {/* Introduction Box with ChemicalFormula formatting */}
         <div className="p-5 rounded-2xl bg-teal-50/70 border border-teal-200 text-teal-950 text-xs sm:text-sm leading-relaxed space-y-1">
           <span className="font-bold text-[#101C3A] flex items-center gap-2 text-xs uppercase tracking-wider">
             <Sparkles className="w-4 h-4 text-[#1DAA9A]" />
             Pengantar Konseptual:
           </span>
-          <p className="text-slate-700 leading-relaxed pt-1">{lesson.introduction}</p>
+          <div className="text-slate-700 leading-relaxed pt-1">
+            {formatChemicalText(lesson.introduction)}
+          </div>
         </div>
       </header>
 
@@ -86,18 +128,18 @@ export default function LessonDetailView({
           >
             <h2 className="text-lg sm:text-xl font-bold text-[#101C3A] flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-[#1DAA9A]" />
-              {sec.title}
+              {formatChemicalText(sec.title)}
             </h2>
 
-            {/* Content text */}
+            {/* Content text parsed with ChemicalFormula */}
             <div className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line space-y-2">
-              {sec.content}
+              {formatChemicalText(sec.content)}
             </div>
 
             {/* Formula Block if present */}
             {sec.formula && (
               <div className="p-4 rounded-xl bg-slate-900 text-[#5DE0E6] font-mono text-xs sm:text-sm font-bold border border-slate-800 overflow-x-auto shadow-inner">
-                {sec.formula}
+                <ChemicalFormula formula={sec.formula} />
               </div>
             )}
 
@@ -109,7 +151,7 @@ export default function LessonDetailView({
                     <tr className="bg-slate-50 border-b border-slate-200 text-[#101C3A] font-bold">
                       {sec.table.headers.map((h, i) => (
                         <th key={i} className="p-3">
-                          {h}
+                          {formatChemicalText(h)}
                         </th>
                       ))}
                     </tr>
@@ -119,7 +161,7 @@ export default function LessonDetailView({
                       <tr key={rIdx} className="hover:bg-slate-50/60 transition-colors">
                         {row.map((cell, cIdx) => (
                           <td key={cIdx} className="p-3">
-                            {cell}
+                            {formatChemicalText(cell)}
                           </td>
                         ))}
                       </tr>
@@ -133,17 +175,106 @@ export default function LessonDetailView({
             {sec.highlight && (
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
                 <span className="font-bold text-[#101C3A] block mb-1">Catatan Penting:</span>
-                {sec.highlight}
+                <div>{formatChemicalText(sec.highlight)}</div>
               </div>
             )}
           </section>
         ))}
       </div>
 
+      {/* Embedded Interactive Widget: ChainVisualizer for Hydrocarbons & Chains */}
+      {(lesson.interactiveWidgetType === 'chain-visualizer' || lesson.slug === 'hidrokarbon') && (
+        <section className="space-y-3">
+          <ChainVisualizer />
+        </section>
+      )}
+
       {/* Embedded Interactive Widget for Name This Molecule */}
       {lesson.interactiveWidgetType === 'name-molecule' && (
         <section className="space-y-3">
           <NameMoleculeWidget />
+        </section>
+      )}
+
+      {/* Interactive 3D Molecule Viewer for this Module */}
+      {activeMolecule && (
+        <section className="space-y-4 bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1DAA9A] flex items-center gap-1.5">
+                <Rotate3d className="w-4 h-4" />
+                Visualisasi Struktur Molekul Terkait
+              </span>
+              <h3 className="text-lg font-bold text-[#101C3A]">
+                Eksplorasi Molekul 3D
+              </h3>
+              <p className="text-xs text-slate-500">
+                Putar bola dan batang untuk mengamati geometri ruang 3D.
+              </p>
+            </div>
+
+            {/* Molecule Selector Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {relatedMolecules.map((mol) => (
+                <button
+                  key={mol.id}
+                  onClick={() => setSelectedMoleculeId(mol.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    selectedMoleculeId === mol.id
+                      ? 'bg-[#101C3A] text-white shadow-2xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                  }`}
+                >
+                  {mol.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Molecule3D molecule={activeMolecule} height={340} />
+        </section>
+      )}
+
+      {/* Kotak Sumber Belajar & Referensi Ilmiah */}
+      {lesson.sources && lesson.sources.length > 0 && (
+        <section className="p-6 sm:p-8 rounded-3xl bg-slate-50 border border-slate-200/90 shadow-2xs space-y-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-teal-100/80 text-teal-800 flex items-center justify-center shrink-0">
+              <BookMarked className="w-5 h-5 text-[#1DAA9A]" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-[#101C3A]">
+                Sumber Belajar & Referensi Rujukan
+              </h3>
+              <p className="text-xs text-slate-500">
+                Materi modul ini disusun mengacu pada literatur baku kimia universitas dan kurikulum nasional resmi:
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {lesson.sources.map((src, sIdx) => (
+              <a
+                key={sIdx}
+                href={src.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#1DAA9A] hover:shadow-sm transition-all flex items-start justify-between gap-3 text-left"
+              >
+                <div className="space-y-1 pr-1">
+                  <h4 className="text-xs sm:text-sm font-bold text-[#101C3A] group-hover:text-[#1DAA9A] transition-colors leading-snug">
+                    {src.title}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Penulis: {src.author} ({src.year})
+                  </p>
+                </div>
+                <div className="w-7 h-7 rounded-lg bg-slate-50 group-hover:bg-teal-50 text-slate-400 group-hover:text-[#1DAA9A] flex items-center justify-center shrink-0 transition-colors">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </div>
+              </a>
+            ))}
+          </div>
         </section>
       )}
 
@@ -157,7 +288,7 @@ export default function LessonDetailView({
           {lesson.summaryPoints.map((point, pIdx) => (
             <li key={pIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-              <span>{point}</span>
+              <span>{formatChemicalText(point)}</span>
             </li>
           ))}
         </ul>
@@ -183,4 +314,3 @@ export default function LessonDetailView({
     </article>
   )
 }
-

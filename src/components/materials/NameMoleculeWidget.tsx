@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CheckCircle2, XCircle, RotateCcw, ArrowRight, HelpCircle } from 'lucide-react'
+import ChemicalFormula, { formatChemicalText } from '../ChemicalFormula'
 
 interface MoleculeNamingChallenge {
   id: string
@@ -105,7 +106,7 @@ export default function NameMoleculeWidget() {
           Tipe: {currentChallenge.structureType}
         </span>
         <div className="font-mono text-lg sm:text-2xl font-black text-[#5DE0E6] tracking-wide py-2 overflow-x-auto">
-          {currentChallenge.formula}
+          <ChemicalFormula formula={currentChallenge.formula} />
         </div>
         <p className="text-xs text-slate-300">
           Berdasarkan aturan tata nama IUPAC, apa nama yang tepat untuk senyawa di atas?
@@ -163,7 +164,7 @@ export default function NameMoleculeWidget() {
             )}
             <span>{isCorrect ? 'Jawaban Anda Tepat!' : 'Belum Tepat, Pelajari Pembahasan:'}</span>
           </div>
-          <p className="leading-relaxed opacity-90">{currentChallenge.explanation}</p>
+          <div className="leading-relaxed opacity-90">{formatChemicalText(currentChallenge.explanation)}</div>
         </div>
       )}
 

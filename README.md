@@ -10,7 +10,7 @@
    - Hero section interaktif dengan visualisasi model atom karbon (tetrahedral sp³ & planar sp²).
    - Pengenalan konsep kekhasan atom karbon (tetravalensi, katenasi, rantai alifatik & siklik).
    - Kartu 6 kategori modul materi terstruktur.
-   - Featured Molecules Showcase dengan interactive 2D ball-and-stick and structural formula viewer.
+   - Featured Molecules Showcase dengan interactive 3D ball-and-stick viewer.
    - Preview 3 eksperimen virtual Carbon Lab.
    - Preview latihan soal penalaran ilmiah HOTS (Higher Order Thinking Skills).
    - 8 Capaian Pembelajaran (Learning Objectives) kimia kurikulum SMA/MA.
@@ -25,7 +25,7 @@
 
 3. **Molecule Explorer (`/molekul`)**:
    - Koleksi lengkap 12 molekul senyawa karbon sesuai PRD: **Metana**, **Etana**, **Propana**, **Butana**, **Etena**, **Etuna**, **Etanol**, **Etanal**, **Propanon**, **Asam Etanoat**, **Etil Etanoat**, dan **Benzena**.
-   - Mode switch: Model Bola-Tongkat (Ball & Stick) vs Rumus Struktur 2D.
+   - Visualisasi interaktif model 3D Bola-Tongkat (Ball & Stick).
    - Kontrol Zoom In, Zoom Out, dan Tombol Reset Tampilan.
    - Legenda warna atom standar kimia (Karbon: Deep Navy, Hidrogen: Putih/Slate, Oksigen: Merah, Nitrogen: Biru).
    - Informasi lengkap: nama IUPAC, rumus molekul, rumus terkondensasi, Mr, titik didih, wujud zat, jenis ikatan kovalen, dan pemanfaatan dalam kehidupan sehari-hari.
@@ -76,7 +76,7 @@ src/
 │   │   ├── LessonDetailView.tsx           # Tampilan detail pembaca materi
 │   │   └── NameMoleculeWidget.tsx         # Aktivitas interaktif "Name This Molecule"
 │   ├── molecules/
-│   │   └── MoleculeViewer2D.tsx           # Visualizer 2D bola-tongkat & rumus struktur dengan zoom
+│   │   └── Molecule3D.tsx                 # Visualizer 3D Three.js bola-tongkat interaktif dengan zoom dan rotasi
 │   ├── navigation/
 │   │   └── Navbar.tsx                     # Navbar terpisah & responsif dengan dropdown materi
 │   └── quiz/

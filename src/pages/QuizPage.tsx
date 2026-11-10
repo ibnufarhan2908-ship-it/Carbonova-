@@ -22,6 +22,7 @@ import {
   saveQuizAnswers,
   clearSavedQuizAnswers,
 } from '../utils/quizStorage'
+import { formatChemicalText } from '../components/ChemicalFormula'
 
 export default function QuizPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -338,20 +339,20 @@ export default function QuizPage() {
                 </span>
               </div>
 
-              {/* Stimulus if exists */}
+              {/* Stimulus with ChemicalFormula formatting */}
               {currentQuestion.stimulus && (
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
                   <span className="font-bold text-teal-800 block mb-1">Stimulus Data Ilmiah:</span>
-                  {currentQuestion.stimulus}
+                  <div>{formatChemicalText(currentQuestion.stimulus)}</div>
                 </div>
               )}
 
-              {/* Question Text */}
+              {/* Question Text with ChemicalFormula formatting */}
               <h3 className="text-base sm:text-lg font-bold text-[#101C3A] leading-snug">
-                {currentQuestion.question}
+                {formatChemicalText(currentQuestion.question)}
               </h3>
 
-              {/* Options */}
+              {/* Options with ChemicalFormula formatting */}
               <div className="space-y-3">
                 {currentQuestion.options.map((option, idx) => {
                   const isSelected = selectedAnswers[currentQuestionIndex] === idx
@@ -391,20 +392,22 @@ export default function QuizPage() {
                       >
                         {String.fromCharCode(65 + idx)}
                       </span>
-                      <span className="pt-0.5 leading-relaxed">{option}</span>
+                      <span className="pt-0.5 leading-relaxed">{formatChemicalText(option)}</span>
                     </button>
                   )
                 })}
               </div>
 
-              {/* Explanation shown after submission */}
+              {/* Explanation shown after submission with ChemicalFormula formatting */}
               {isSubmitted && (
                 <div className="p-5 rounded-2xl bg-teal-50/70 border border-teal-200 text-xs sm:text-sm text-teal-950 space-y-2 animate-in fade-in">
                   <div className="font-bold flex items-center gap-2 text-teal-900">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>Pembahasan Ilmiah:</span>
                   </div>
-                  <p className="leading-relaxed text-slate-700">{currentQuestion.explanation}</p>
+                  <div className="leading-relaxed text-slate-700">
+                    {formatChemicalText(currentQuestion.explanation)}
+                  </div>
                 </div>
               )}
 

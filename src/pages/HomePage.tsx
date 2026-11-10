@@ -16,7 +16,8 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import HeroMoleculeVisual from '../components/home/HeroMoleculeVisual'
-import MoleculeViewer2D from '../components/molecules/MoleculeViewer2D'
+import Molecule3D from '../components/molecules/Molecule3D'
+import ChemicalFormula from '../components/ChemicalFormula'
 import { MOLECULES_DATA } from '../data/molecules'
 import { LESSON_MODULES, LEARNING_OBJECTIVES } from '../data/lessons'
 import { QUIZ_QUESTIONS } from '../data/questions'
@@ -332,16 +333,18 @@ export default function HomePage() {
               }`}
             >
               <span>{mol.name}</span>
-              <span className="ml-1.5 opacity-70 font-mono text-[11px]">({mol.formula})</span>
+              <span className="ml-1.5 opacity-70 font-mono text-[11px]">
+                (<ChemicalFormula formula={mol.formula} />)
+              </span>
             </button>
           ))}
         </div>
 
         {/* Interactive Molecule Showcase Card */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-sm">
-          {/* Left: 2D Interactive Molecular Viewer */}
+          {/* Left: 3D Interactive Molecular Viewer */}
           <div className="lg:col-span-7">
-            <MoleculeViewer2D molecule={activeMolecule} height={340} />
+            <Molecule3D molecule={activeMolecule} height={360} />
           </div>
 
           {/* Right: Molecule Details & IUPAC Information */}

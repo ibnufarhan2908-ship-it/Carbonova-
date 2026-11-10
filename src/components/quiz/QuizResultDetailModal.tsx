@@ -1,5 +1,6 @@
 import { X, CheckCircle2, XCircle, Trophy, Calendar, Award } from 'lucide-react'
 import type { QuizResult } from '../../types/quiz'
+import { formatChemicalText } from '../ChemicalFormula'
 
 interface QuizResultDetailModalProps {
   result: QuizResult | null
@@ -136,9 +137,9 @@ export default function QuizResultDetailModal({
                   </span>
                 </div>
 
-                <p className="text-xs sm:text-sm font-bold text-[#101C3A] my-3 leading-relaxed">
-                  {ans.questionText}
-                </p>
+                <div className="text-xs sm:text-sm font-bold text-[#101C3A] my-3 leading-relaxed">
+                  {formatChemicalText(ans.questionText)}
+                </div>
 
                 <div className="space-y-2 text-xs">
                   <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-start gap-2">
@@ -148,38 +149,31 @@ export default function QuizResultDetailModal({
                         ans.isCorrect ? 'text-emerald-700' : 'text-rose-700'
                       }`}
                     >
-                      {ans.selectedAnswer || '(Tidak dijawab)'}
+                      {formatChemicalText(ans.selectedAnswer || '(Tidak dijawab)')}
                     </span>
                   </div>
 
                   {!ans.isCorrect && (
                     <div className="p-3 rounded-xl bg-white border border-emerald-200 flex items-start gap-2">
                       <span className="font-bold text-emerald-800 shrink-0">Kunci Jawaban:</span>
-                      <span className="font-bold text-emerald-800">{ans.correctAnswer}</span>
+                      <span className="font-bold text-emerald-800">
+                        {formatChemicalText(ans.correctAnswer)}
+                      </span>
                     </div>
                   )}
 
                   <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 text-teal-950 space-y-1">
                     <span className="font-bold text-[#101C3A] block">Pembahasan Ilmiah:</span>
-                    <p className="leading-relaxed text-slate-700">{ans.explanation}</p>
+                    <div className="leading-relaxed text-slate-700">
+                      {formatChemicalText(ans.explanation)}
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Modal Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
-          <button
-            onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-[#101C3A] text-white text-xs font-bold hover:bg-[#182852] transition-colors"
-          >
-            Tutup Tinjauan
-          </button>
-        </div>
       </div>
     </div>
   )
 }
-

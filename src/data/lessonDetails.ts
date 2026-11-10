@@ -68,6 +68,38 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
       'Rantai karbon dapat berbentuk alifatik terbuka (lurus/bercabang) maupun alisiklik/aromatik (tertutup).',
       'Dikenal 4 posisi atom karbon: primer (1°), sekunder (2°), tersier (3°), dan kuartener (4°).',
     ],
+    sources: [
+      {
+        title: 'Kimia Dasar: Konsep-konsep Inti (Edisi Ketiga)',
+        author: 'Raymond Chang',
+        year: 2005,
+        url: 'https://opac.perpusnas.go.id/DetailOpac.aspx?id=561026',
+      },
+      {
+        title: 'Chemistry: The Central Science (14th Edition)',
+        author: 'Theodore L. Brown, H. Eugene LeMay, Bruce E. Bursten, Catherine J. Murphy',
+        year: 2017,
+        url: 'https://www.pearson.com/en-us/subject-catalog/p/chemistry-the-central-science/P200000006742',
+      },
+      {
+        title: 'Buku Siswa Kimia untuk SMA/MA Kelas XI (Kurikulum Merdeka)',
+        author: 'Munasprianto Ramli dkk. (Pusat Perbukuan Kemendikbudristek)',
+        year: 2022,
+        url: 'https://buku.kemdikbud.go.id/katalog/kimia-untuk-smama-kelas-xi',
+      },
+      {
+        title: 'LibreTexts Chemistry — Carbon Hybridization and Tetravalency',
+        author: 'LibreTexts Chemistry Open Education Resource',
+        year: 2024,
+        url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry',
+      },
+      {
+        title: 'Khan Academy — Structure and Bonding in Carbon Chemistry',
+        author: 'Sal Khan & Khan Academy Chemistry Team',
+        year: 2024,
+        url: 'https://www.khanacademy.org/science/organic-chemistry',
+      },
+    ],
   },
 
   hidrokarbon: {
@@ -79,6 +111,7 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
     category: 'Golongan Utama',
     introduction:
       'Hidrokarbon adalah senyawa organik paling murni yang hanya tersusun atas dua jenis unsur: Karbon (C) dan Hidrogen (H). Berdasarkan jenis ikatan kovalennya, hidrokarbon alifatik dibagi menjadi tiga deret homolog: Alkana, Alkena, dan Alkuna.',
+    interactiveWidgetType: 'chain-visualizer',
     sections: [
       {
         title: '1. Alkana — Hidrokarbon Jenuh (CₙH₂ₙ₊₂)',
@@ -132,6 +165,38 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
       'Alkena (CnH2n) memiliki ikatan rangkap dua C=C yang mudah mengalami reaksi adisi.',
       'Alkuna (CnH2n-2) memiliki ikatan rangkap tiga C≡C dengan sudut ikatan linier 180°.',
       'Semakin panjang rantai karbon dalam satu deret homolog, semakin tinggi titik didih dan massa jenisnya.',
+    ],
+    sources: [
+      {
+        title: 'Kimia Dasar: Konsep-konsep Inti (Edisi Ketiga)',
+        author: 'Raymond Chang',
+        year: 2005,
+        url: 'https://opac.perpusnas.go.id/DetailOpac.aspx?id=561026',
+      },
+      {
+        title: 'Chemistry: The Central Science (14th Edition)',
+        author: 'Theodore L. Brown, H. Eugene LeMay, Bruce E. Bursten, Catherine J. Murphy',
+        year: 2017,
+        url: 'https://www.pearson.com/en-us/subject-catalog/p/chemistry-the-central-science/P200000006742',
+      },
+      {
+        title: 'Buku Siswa Kimia untuk SMA/MA Kelas XI (Kurikulum Merdeka)',
+        author: 'Munasprianto Ramli dkk. (Pusat Perbukuan Kemendikbudristek)',
+        year: 2022,
+        url: 'https://buku.kemdikbud.go.id/katalog/kimia-untuk-smama-kelas-xi',
+      },
+      {
+        title: 'LibreTexts Chemistry — Alkanes, Alkenes, and Alkynes Homologous Series',
+        author: 'LibreTexts Chemistry Open Education Resource',
+        year: 2024,
+        url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry',
+      },
+      {
+        title: 'Khan Academy — Hydrocarbon Frameworks and Reactions',
+        author: 'Sal Khan & Khan Academy Chemistry Team',
+        year: 2024,
+        url: 'https://www.khanacademy.org/science/organic-chemistry',
+      },
     ],
   },
 
@@ -188,6 +253,38 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
       'Tuliskan cabang secara alfabetis dengan awalan pengali (di, tri, tetra).',
       'Gunakan tanda hubung (-) antara angka dan huruf, serta tanda koma (,) di antara angka.',
     ],
+    sources: [
+      {
+        title: 'Kimia Dasar: Konsep-konsep Inti (Edisi Ketiga)',
+        author: 'Raymond Chang',
+        year: 2005,
+        url: 'https://opac.perpusnas.go.id/DetailOpac.aspx?id=561026',
+      },
+      {
+        title: 'Chemistry: The Central Science (14th Edition)',
+        author: 'Theodore L. Brown, H. Eugene LeMay, Bruce E. Bursten, Catherine J. Murphy',
+        year: 2017,
+        url: 'https://www.pearson.com/en-us/subject-catalog/p/chemistry-the-central-science/P200000006742',
+      },
+      {
+        title: 'Buku Siswa Kimia untuk SMA/MA Kelas XI (Kurikulum Merdeka)',
+        author: 'Munasprianto Ramli dkk. (Pusat Perbukuan Kemendikbudristek)',
+        year: 2022,
+        url: 'https://buku.kemdikbud.go.id/katalog/kimia-untuk-smama-kelas-xi',
+      },
+      {
+        title: 'LibreTexts Chemistry — IUPAC Nomenclature of Organic Compounds',
+        author: 'LibreTexts Chemistry Open Education Resource',
+        year: 2024,
+        url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry',
+      },
+      {
+        title: 'Khan Academy — Naming Alkanes, Alkenes, and Alkynes',
+        author: 'Sal Khan & Khan Academy Chemistry Team',
+        year: 2024,
+        url: 'https://www.khanacademy.org/science/organic-chemistry',
+      },
+    ],
   },
 
   'gugus-fungsi': {
@@ -199,6 +296,7 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
     category: 'Turunan Alkana',
     introduction:
       'Gugus fungsi adalah gugus atom atau ikatan spesifik di dalam molekul yang bertanggung jawab atas karakteristik sifat fisik dan reaksi kimia senyawa tersebut. Senyawa turunan alkana terbentuk ketika satu atau lebih atom H digantikan oleh gugus fungsi.',
+    interactiveWidgetType: 'isomer-compare',
     sections: [
       {
         title: '1. Alkohol (Alkanol) vs Eter (Alkoksi Alkana)',
@@ -257,6 +355,38 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
       'Uji pembeda Fehling & Tollens membedakan aldehida (bereaksi positif) dengan keton (negatif).',
       'Ester beraroma harum buah dihasilkan melalui reaksi esterifikasi asam karboksilat dan alkohol.',
     ],
+    sources: [
+      {
+        title: 'Kimia Dasar: Konsep-konsep Inti (Edisi Ketiga)',
+        author: 'Raymond Chang',
+        year: 2005,
+        url: 'https://opac.perpusnas.go.id/DetailOpac.aspx?id=561026',
+      },
+      {
+        title: 'Chemistry: The Central Science (14th Edition)',
+        author: 'Theodore L. Brown, H. Eugene LeMay, Bruce E. Bursten, Catherine J. Murphy',
+        year: 2017,
+        url: 'https://www.pearson.com/en-us/subject-catalog/p/chemistry-the-central-science/P200000006742',
+      },
+      {
+        title: 'Buku Siswa Kimia untuk SMA/MA Kelas XI (Kurikulum Merdeka)',
+        author: 'Munasprianto Ramli dkk. (Pusat Perbukuan Kemendikbudristek)',
+        year: 2022,
+        url: 'https://buku.kemdikbud.go.id/katalog/kimia-untuk-smama-kelas-xi',
+      },
+      {
+        title: 'LibreTexts Chemistry — Functional Groups in Organic Chemistry',
+        author: 'LibreTexts Chemistry Open Education Resource',
+        year: 2024,
+        url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry',
+      },
+      {
+        title: 'Khan Academy — Alcohols, Ethers, Aldehydes, and Ketones',
+        author: 'Sal Khan & Khan Academy Chemistry Team',
+        year: 2024,
+        url: 'https://www.khanacademy.org/science/organic-chemistry',
+      },
+    ],
   },
 
   'isomer-senyawa-karbon': {
@@ -312,6 +442,38 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
       'Isomer gugus fungsi memiliki rumus molekul identik namun sifat kimia bertolak belakang karena gugus fungsi berbeda.',
       'Perbedaan bentuk geometri molekul memengaruhi luas kontak antarmolekul dan titik didih.',
     ],
+    sources: [
+      {
+        title: 'Kimia Dasar: Konsep-konsep Inti (Edisi Ketiga)',
+        author: 'Raymond Chang',
+        year: 2005,
+        url: 'https://opac.perpusnas.go.id/DetailOpac.aspx?id=561026',
+      },
+      {
+        title: 'Chemistry: The Central Science (14th Edition)',
+        author: 'Theodore L. Brown, H. Eugene LeMay, Bruce E. Bursten, Catherine J. Murphy',
+        year: 2017,
+        url: 'https://www.pearson.com/en-us/subject-catalog/p/chemistry-the-central-science/P200000006742',
+      },
+      {
+        title: 'Buku Siswa Kimia untuk SMA/MA Kelas XI (Kurikulum Merdeka)',
+        author: 'Munasprianto Ramli dkk. (Pusat Perbukuan Kemendikbudristek)',
+        year: 2022,
+        url: 'https://buku.kemdikbud.go.id/katalog/kimia-untuk-smama-kelas-xi',
+      },
+      {
+        title: 'LibreTexts Chemistry — Constitutional Isomers and Stereoisomers',
+        author: 'LibreTexts Chemistry Open Education Resource',
+        year: 2024,
+        url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry',
+      },
+      {
+        title: 'Khan Academy — Isomerism in Carbon Chemistry',
+        author: 'Sal Khan & Khan Academy Chemistry Team',
+        year: 2024,
+        url: 'https://www.khanacademy.org/science/organic-chemistry',
+      },
+    ],
   },
 
   'sifat-dan-reaksi': {
@@ -323,6 +485,7 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
     category: 'Reaktivitas Kimia',
     introduction:
       'Sifat fisik dan reaktivitas kimia senyawa karbon ditentukan secara langsung oleh panjang rantai karbon, kepolaran ikatan, keberadaan ikatan hidrogen, serta keberadaan ikatan pi (π).',
+    interactiveWidgetType: 'chain-visualizer',
     sections: [
       {
         title: '1. Pengaruh Panjang Rantai & Ikatan Hidrogen terhadap Titik Didih',
@@ -358,10 +521,41 @@ export const LESSON_DETAILS: Record<string, DetailedLesson> = {
     ],
     summaryPoints: [
       'Gaya antarmolekul dan ikatan hidrogen mengontrol titik didih dan kelarutan zat.',
-      'Pembakaran sempurna menghasilkan CO2 dan H2O; pembakaran tidak sempurna menghasilkan gas berbahaya CO.',
+      'Pembakaran sempurna menghasilkan CO₂ dan H₂O; pembakaran tidak sempurna menghasilkan gas berbahaya CO.',
       'Ikatan rangkap dua (C=C) pada alkena sangat khas mengalami reaksi adisi yang memutuskan ikatan pi.',
       'Reaksi esterifikasi menghasilkan ester beraroma harum buah yang banyak digunakan di industri pangan.',
     ],
+    sources: [
+      {
+        title: 'Kimia Dasar: Konsep-konsep Inti (Edisi Ketiga)',
+        author: 'Raymond Chang',
+        year: 2005,
+        url: 'https://opac.perpusnas.go.id/DetailOpac.aspx?id=561026',
+      },
+      {
+        title: 'Chemistry: The Central Science (14th Edition)',
+        author: 'Theodore L. Brown, H. Eugene LeMay, Bruce E. Bursten, Catherine J. Murphy',
+        year: 2017,
+        url: 'https://www.pearson.com/en-us/subject-catalog/p/chemistry-the-central-science/P200000006742',
+      },
+      {
+        title: 'Buku Siswa Kimia untuk SMA/MA Kelas XI (Kurikulum Merdeka)',
+        author: 'Munasprianto Ramli dkk. (Pusat Perbukuan Kemendikbudristek)',
+        year: 2022,
+        url: 'https://buku.kemdikbud.go.id/katalog/kimia-untuk-smama-kelas-xi',
+      },
+      {
+        title: 'LibreTexts Chemistry — Combustion and Addition Reactions of Hydrocarbons',
+        author: 'LibreTexts Chemistry Open Education Resource',
+        year: 2024,
+        url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry',
+      },
+      {
+        title: 'Khan Academy — Organic Chemical Reactions and Thermodynamics',
+        author: 'Sal Khan & Khan Academy Chemistry Team',
+        year: 2024,
+        url: 'https://www.khanacademy.org/science/organic-chemistry',
+      },
+    ],
   },
 }
-

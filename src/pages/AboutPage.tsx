@@ -54,7 +54,7 @@ export default function AboutPage() {
               <Compass className="w-5 h-5" />
             </div>
             <h4 className="font-bold text-sm text-[#101C3A]">Molecule Explorer</h4>
-            <p className="text-xs text-slate-500">Visualisasi 2D bola-tongkat dan rumus struktur senyawa real.</p>
+            <p className="text-xs text-slate-500">Visualisasi 3D bola-tongkat dan geometri ruang senyawa real.</p>
           </div>
 
           <div className="p-5 rounded-2xl bg-white border border-slate-200 text-center space-y-2">

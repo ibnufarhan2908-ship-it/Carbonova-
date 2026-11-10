@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Compass, Search } from 'lucide-react'
-import MoleculeViewer2D from '../components/molecules/MoleculeViewer2D'
+import Molecule3D from '../components/molecules/Molecule3D'
+import ChemicalFormula, { formatChemicalText } from '../components/ChemicalFormula'
 import { MOLECULES_DATA } from '../data/molecules'
 
 export default function MoleculeExplorerPage() {
@@ -50,14 +51,13 @@ export default function MoleculeExplorerPage() {
       <div className="space-y-3 max-w-3xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold">
           <Compass className="w-3.5 h-3.5" />
-          Molecule Explorer Interaktif
+          Molecule Explorer Interaktif 3D
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-[#101C3A] tracking-tight">
           Eksplorasi Struktur & Geometri Molekul
         </h1>
         <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-          Pelajari geometri molekul senyawa karbon, jenis ikatan kovalen (tunggal, rangkap dua, rangkap tiga),
-          serta rumus struktur 2D yang akurat sesuai aturan valensi.
+          Pelajari geometri molekul senyawa karbon dalam bentuk visualisasi 3D interaktif (drag untuk memutar, scroll untuk zoom).
         </p>
       </div>
 
@@ -104,32 +104,40 @@ export default function MoleculeExplorerPage() {
                   onClick={() => handleSelectMolecule(m.id)}
                   className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-center justify-between ${
                     isSelected
-                      ? 'bg-teal-50/60 border-[#1DAA9A] ring-1 ring-[#1DAA9A]'
-                      : 'bg-white hover:bg-slate-50 border-slate-200/90'
+                      ? 'border-[#1DAA9A] bg-teal-50/70 shadow-xs'
+                      : 'border-slate-200/80 bg-white hover:bg-slate-50'
                   }`}
                 >
                   <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs text-[#101C3A]">{m.name}</span>
-                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-bold">
-                        {m.formula}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 font-mono">IUPAC: {m.iupacName}</p>
+                    <span
+                      className={`font-bold text-xs sm:text-sm block ${
+                        isSelected ? 'text-[#101C3A]' : 'text-slate-800'
+                      }`}
+                    >
+                      {m.name}
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      {m.iupacName}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600">
-                    {m.category}
-                  </span>
+                  <div className="text-right space-y-0.5">
+                    <span className="text-xs font-mono font-bold text-teal-800 bg-white px-2 py-0.5 rounded-md border border-slate-200 block">
+                      <ChemicalFormula formula={m.formula} />
+                    </span>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold">
+                      {m.category}
+                    </span>
+                  </div>
                 </button>
               )
             })}
           </div>
         </div>
 
-        {/* Right Column: Detailed Viewer and Scientific Data */}
+        {/* Right Column: Interactive 3D Viewer & Chemistry Details */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Molecular Viewer Component */}
-          <MoleculeViewer2D molecule={currentMolecule} height={360} />
+          {/* Molecular Viewer Component: Three.js 3D */}
+          <Molecule3D molecule={currentMolecule} height={380} showControls={true} />
 
           {/* Detailed Chemistry Info Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -149,7 +157,9 @@ export default function MoleculeExplorerPage() {
                 </div>
                 <div className="flex items-center justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Rumus Molekul:</span>
-                  <span className="font-mono font-bold text-teal-700">{currentMolecule.formula}</span>
+                  <span className="font-mono font-bold text-teal-700">
+                    <ChemicalFormula formula={currentMolecule.formula} />
+                  </span>
                 </div>
                 <div className="flex items-center justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Massa Molar (Mr):</span>
@@ -160,7 +170,7 @@ export default function MoleculeExplorerPage() {
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Gugus Fungsi:</span>
                   <span className="font-semibold text-slate-700">
-                    {currentMolecule.functionalGroup || 'Tidak ada (Hidrokarbon murni)'}
+                    {currentMolecule.functionalGroup ? formatChemicalText(currentMolecule.functionalGroup) : 'Tidak ada (Hidrokarbon murni)'}
                   </span>
                 </div>
               </div>
@@ -178,14 +188,16 @@ export default function MoleculeExplorerPage() {
                 </div>
                 <div className="flex items-center justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Wujud Suhu Kamar (25°C):</span>
-                  <span className="font-semibold text-slate-800">{currentMolecule.stateAtRoomTemp}</span>
+                  <span className="font-semibold text-slate-800">
+                    {formatChemicalText(currentMolecule.stateAtRoomTemp)}
+                  </span>
                 </div>
                 <div className="py-1 border-b border-slate-100">
                   <span className="text-slate-500 block mb-1">Jenis Ikatan Kovalen:</span>
                   <ul className="space-y-1">
                     {currentMolecule.bondTypes.map((b, idx) => (
                       <li key={idx} className="font-mono text-[11px] text-slate-700">
-                        • {b}
+                        • {formatChemicalText(b)}
                       </li>
                     ))}
                   </ul>
@@ -197,9 +209,9 @@ export default function MoleculeExplorerPage() {
           {/* Description & Real-world Usage Banner */}
           <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
             <h4 className="font-bold text-[#101C3A]">Pemanfaatan dalam Kehidupan Sehari-hari</h4>
-            <p className="text-slate-600 leading-relaxed italic">
-              "{currentMolecule.dailyUses}"
-            </p>
+            <div className="text-slate-600 leading-relaxed italic">
+              "{formatChemicalText(currentMolecule.dailyUses)}"
+            </div>
           </div>
         </div>
       </div>
