@@ -11,6 +11,7 @@ import {
 import { LESSON_MODULES } from '../data/lessons'
 import { LESSON_DETAILS } from '../data/lessonDetails'
 import LessonDetailView from '../components/materials/LessonDetailView'
+import { formatChemicalText } from '../components/ChemicalFormula'
 
 export default function MaterialsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -141,11 +142,17 @@ export default function MaterialsPage() {
               </div>
 
               <div>
-                <h3 className="font-extrabold text-lg text-[#101C3A]">{module.title}</h3>
-                <p className="text-xs font-medium text-slate-500 mt-0.5">{module.subtitle}</p>
+                <h3 className="font-extrabold text-lg text-[#101C3A]">
+                  {formatChemicalText(module.title)}
+                </h3>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">
+                  {formatChemicalText(module.subtitle)}
+                </p>
               </div>
 
-              <p className="text-xs text-slate-600 leading-relaxed">{module.description}</p>
+              <div className="text-xs text-slate-600 leading-relaxed">
+                {formatChemicalText(module.description)}
+              </div>
 
               {/* Topics List */}
               <div className="space-y-2 pt-3 border-t border-slate-100">
@@ -156,7 +163,7 @@ export default function MaterialsPage() {
                   {module.topics.map((t, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-xs text-slate-600">
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#1DAA9A] mt-0.5 shrink-0" />
-                      <span className="line-clamp-2">{t}</span>
+                      <span className="line-clamp-2">{formatChemicalText(t)}</span>
                     </li>
                   ))}
                 </ul>
@@ -165,7 +172,7 @@ export default function MaterialsPage() {
 
             <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
               <span className="text-xs font-mono font-bold text-slate-500">
-                {module.keyFormula}
+                {module.keyFormula ? formatChemicalText(module.keyFormula) : ''}
               </span>
               <button
                 onClick={() => handleSelectModule(module.slug)}

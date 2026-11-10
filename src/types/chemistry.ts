@@ -5,6 +5,7 @@ export interface MoleculeAtom {
   element: AtomType
   x: number
   y: number
+  z?: number
   label?: string
 }
 
@@ -44,6 +45,13 @@ export interface SubSection {
   }
 }
 
+export interface LessonSource {
+  title: string
+  author: string
+  year: number | string
+  url: string
+}
+
 export interface DetailedLesson {
   id: string
   slug: string
@@ -54,7 +62,8 @@ export interface DetailedLesson {
   introduction: string
   sections: SubSection[]
   summaryPoints: string[]
-  interactiveWidgetType?: 'name-molecule' | 'isomer-compare' | 'valence-demo'
+  interactiveWidgetType?: 'name-molecule' | 'isomer-compare' | 'valence-demo' | 'chain-visualizer'
+  sources?: LessonSource[]
 }
 
 export interface LessonSection {
