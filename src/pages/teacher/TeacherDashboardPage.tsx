@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Users,
@@ -23,6 +23,7 @@ import {
   getStudents,
   getAllSubmissions,
   getSubmissionsByStudent,
+  syncFromFirestore,
 } from '../../services/db'
 import type { StudentQuizSubmission } from '../../types/auth'
 import QuizResultDetailModal from '../../components/quiz/QuizResultDetailModal'
@@ -53,6 +54,13 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
   // State untuk pencarian & modal detail
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubmission, setSelectedSubmission] = useState<StudentQuizSubmission | null>(null)
+  const [, setRefreshTick] = useState(0)
+
+  useEffect(() => {
+    syncFromFirestore().then(() => {
+      setRefreshTick((prev) => prev + 1)
+    })
+  }, [])
 
   // Filter hasil pengerjaan
   const filteredSubmissions = useMemo(() => {

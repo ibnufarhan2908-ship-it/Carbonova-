@@ -9,6 +9,12 @@ import type {
 import { generateSalt, hashPassword } from './crypto.ts'
 import { LESSON_MODULES } from '../data/lessons.ts'
 import { QUIZ_QUESTIONS } from '../data/questions.ts'
+import {
+  saveSubmissionToFirestore,
+  deleteSubmissionFromFirestore,
+  saveModuleProgressToFirestore,
+  getAllSubmissionsFromFirestore,
+} from './firebaseDb.ts'
 
 const USERS_STORAGE_KEY = 'carbonova_db_users_v1'
 const SUBMISSIONS_STORAGE_KEY = 'carbonova_db_submissions_v1'
@@ -154,6 +160,12 @@ export function updateUserLastLogin(userId: string): void {
   }
 }
 
+export function createLocalUser(storedUser: StoredUser): void {
+  const users = getStoredItem<StoredUser[]>(USERS_STORAGE_KEY, [])
+  users.push(storedUser)
+  setStoredItem(USERS_STORAGE_KEY, users)
+}
+
 // -------------------------------------------------------------
 // SUBMISI KUIS / HASIL PENGERJAAN
 // -------------------------------------------------------------
@@ -177,12 +189,23 @@ export function saveQuizSubmission(submission: StudentQuizSubmission): void {
     all.unshift(submission)
   }
   setStoredItem(SUBMISSIONS_STORAGE_KEY, all)
+
+  // Sinkronisasi otomatis ke Cloud Firestore jika aktif
+  saveSubmissionToFirestore(submission).catch((err) => {
+    console.warn('Gagal sinkronisasi submisi ke Firestore:', err)
+  })
 }
 
 export function deleteSubmission(id: string): boolean {
   const all = getAllSubmissions()
   const filtered = all.filter((s) => s.id !== id)
   setStoredItem(SUBMISSIONS_STORAGE_KEY, filtered)
+
+  // Sinkronisasi hapus ke Firestore
+  deleteSubmissionFromFirestore(id).catch((err) => {
+    console.warn('Gagal menghapus submisi dari Firestore:', err)
+  })
+
   return true
 }
 
@@ -205,6 +228,11 @@ export function markModuleStudied(userId: string, moduleSlug: string): void {
       studiedAt: new Date().toISOString(),
     })
     setStoredItem(PROGRESS_STORAGE_KEY, all)
+
+    // Sinkronisasi progres ke Cloud Firestore
+    saveModuleProgressToFirestore(userId, moduleSlug).catch((err) => {
+      console.warn('Gagal menyimpan progres ke Firestore:', err)
+    })
   }
 }
 
@@ -276,5 +304,23 @@ export function getStudentStats(userId: string): StudentSummaryStats {
     remainingQuestionsCount,
     averageScore,
     totalAttempts: submissions.length,
+  }
+}
+
+/**
+ * Menyinkronkan data pengerjaan kuis dari Firestore ke storage lokal saat halaman dibuka
+ */
+export async function syncFromFirestore(): Promise<void> {
+  try {
+    const remoteSubmissions = await getAllSubmissionsFromFirestore()
+    if (remoteSubmissions && remoteSubmissions.length > 0) {
+      const local = getAllSubmissions()
+      const map = new Map<string, StudentQuizSubmission>()
+      local.forEach((s) => map.set(s.id, s))
+      remoteSubmissions.forEach((s) => map.set(s.id, s))
+      setStoredItem(SUBMISSIONS_STORAGE_KEY, Array.from(map.values()))
+    }
+  } catch (err) {
+    console.warn('Sync from Firestore failed:', err)
   }
 }

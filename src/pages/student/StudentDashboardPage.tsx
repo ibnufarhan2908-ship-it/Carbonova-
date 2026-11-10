@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   BookOpen,
@@ -16,7 +16,7 @@ import {
   Flame,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { getStudentStats, getSubmissionsByStudent } from '../../services/db'
+import { getStudentStats, getSubmissionsByStudent, syncFromFirestore } from '../../services/db'
 import type { StudentQuizSubmission } from '../../types/auth'
 import QuizResultDetailModal from '../../components/quiz/QuizResultDetailModal'
 import type { QuizResult } from '../../types/quiz'
@@ -24,6 +24,13 @@ import type { QuizResult } from '../../types/quiz'
 export default function StudentDashboardPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [refreshTick, setRefreshTick] = useState(0)
+
+  useEffect(() => {
+    syncFromFirestore().then(() => {
+      setRefreshTick((prev) => prev + 1)
+    })
+  }, [])
 
   const stats = useMemo(() => {
     if (!user) {
@@ -37,13 +44,16 @@ export default function StudentDashboardPage() {
         totalAttempts: 0,
       }
     }
+    // Sertakan refreshTick agar metrik diperbarui setelah sinkronisasi Firestore
+    if (refreshTick < 0) return {} as any
     return getStudentStats(user.id)
-  }, [user])
+  }, [user, refreshTick])
 
   const mySubmissions = useMemo(() => {
     if (!user) return []
+    if (refreshTick < 0) return []
     return getSubmissionsByStudent(user.id)
-  }, [user])
+  }, [user, refreshTick])
 
   const [selectedSubmission, setSelectedSubmission] = useState<StudentQuizSubmission | null>(null)
 

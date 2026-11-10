@@ -1,10 +1,11 @@
-import type { AuthSession, User } from '../types/auth.ts'
-import { verifyPassword, generateSessionToken } from './crypto.ts'
+import type { AuthSession, User, UserRole, StoredUser } from '../types/auth.ts'
+import { verifyPassword, generateSessionToken, generateSalt, hashPassword } from './crypto.ts'
 import {
   initDatabase,
   getStoredUserByEmail,
   getUserById,
   updateUserLastLogin,
+  createLocalUser,
 } from './db.ts'
 
 const SESSION_STORAGE_KEY = 'carbonova_auth_session_v1'
@@ -56,6 +57,71 @@ export async function login(
   }
 
   return { success: true, user: safeUserWithLogin }
+}
+
+export async function register(
+  name: string,
+  email: string,
+  pass: string,
+  role: UserRole = 'student'
+): Promise<{ success: boolean; user?: User; error?: string }> {
+  await initDatabase()
+
+  const cleanEmail = email.trim().toLowerCase()
+  if (!cleanEmail || !pass || !name.trim()) {
+    return { success: false, error: 'Nama lengkap, email, dan kata sandi wajib diisi.' }
+  }
+
+  const existing = getStoredUserByEmail(cleanEmail)
+  if (existing) {
+    return { success: false, error: 'Alamat email ini sudah terdaftar. Silakan langsung masuk.' }
+  }
+
+  if (pass.length < 6) {
+    return { success: false, error: 'Kata sandi minimal 6 karakter.' }
+  }
+
+  const salt = generateSalt()
+  const passwordHash = await hashPassword(pass, salt)
+  const now = new Date().toISOString()
+  const id = `usr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+
+  const newStoredUser: StoredUser = {
+    id,
+    name: name.trim(),
+    email: cleanEmail,
+    role,
+    status: 'active',
+    createdAt: now,
+    lastLoginAt: now,
+    passwordHash,
+    salt,
+  }
+
+  createLocalUser(newStoredUser)
+
+  const token = generateSessionToken()
+  const safeUser: User = {
+    id,
+    name: name.trim(),
+    email: cleanEmail,
+    role,
+    status: 'active',
+    createdAt: now,
+    lastLoginAt: now,
+  }
+
+  const session: AuthSession = {
+    token,
+    user: safeUser,
+    expiresAt: Date.now() + SESSION_DURATION_MS,
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
+  }
+
+  return { success: true, user: safeUser }
 }
 
 export function logout(): void {
