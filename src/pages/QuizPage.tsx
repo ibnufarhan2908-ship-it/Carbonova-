@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 import { QUIZ_QUESTIONS } from '../data/questions'
 import { useQuizHistory } from '../hooks/useQuizHistory'
+import { useAuth } from '../context/AuthContext'
+import { saveQuizSubmission } from '../services/db'
 import QuizHistoryView from '../components/quiz/QuizHistoryView'
 import type { QuizResult, QuizAnswerRecord } from '../types/quiz'
 import {
@@ -28,6 +30,7 @@ export default function QuizPage() {
   const activeTab: 'kuis' | 'riwayat' = isHistoryRoute ? 'riwayat' : 'kuis'
 
   const { history, statistics, saveResult, deleteResult, clearHistory } = useQuizHistory()
+  const { user } = useAuth()
 
   // Quiz state
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua Topik')
@@ -119,6 +122,15 @@ export default function QuizPage() {
     }
 
     saveResult(newResult)
+
+    if (user) {
+      saveQuizSubmission({
+        ...newResult,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+      })
+    }
   }
 
   // Hapus jawaban dari localStorage dan reset status kuis

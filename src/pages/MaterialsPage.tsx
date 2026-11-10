@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   BookOpen,
@@ -11,12 +11,21 @@ import {
 import { LESSON_MODULES } from '../data/lessons'
 import { LESSON_DETAILS } from '../data/lessonDetails'
 import LessonDetailView from '../components/materials/LessonDetailView'
+import { useAuth } from '../context/AuthContext'
+import { markModuleStudied } from '../services/db'
 
 export default function MaterialsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeModuleSlug = searchParams.get('modul') || ''
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua')
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (activeModuleSlug && user && user.role === 'student') {
+      markModuleStudied(user.id, activeModuleSlug)
+    }
+  }, [activeModuleSlug, user])
 
   const categories = [
     'Semua',

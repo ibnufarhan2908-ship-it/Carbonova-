@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test:auth": "node --experimental-strip-types test_auth_lms.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
