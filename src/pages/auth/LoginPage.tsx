@@ -486,14 +486,39 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Link Buat Akun Baru */}
+            {/* Navigasi ganti tab bawah */}
             <div className="text-center pt-1">
-              <p className="text-xs text-slate-600">
-                Belum memiliki akun?{' '}
-                <Link to="/register" className="font-bold text-teal-700 hover:text-teal-900 hover:underline">
-                  Daftar akun baru di sini →
-                </Link>
-              </p>
+              {mode === 'login' ? (
+                <p className="text-xs text-slate-500">
+                  Belum memiliki akun terdaftar?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('register')
+                      setAuthError(null)
+                      setAuthSuccess(null)
+                    }}
+                    className="font-bold text-[#1DAA9A] hover:underline cursor-pointer"
+                  >
+                    Daftar Akun Baru
+                  </button>
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  Sudah memiliki akun?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('login')
+                      setAuthError(null)
+                      setAuthSuccess(null)
+                    }}
+                    className="font-bold text-[#1DAA9A] hover:underline cursor-pointer"
+                  >
+                    Masuk ke Akun
+                  </button>
+                </p>
+              )}
             </div>
           </form>
 
@@ -505,7 +530,7 @@ export default function LoginPage() {
                 Akun Demo Terdaftar
               </span>
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                Klik untuk Isi Otomatis
+                {isFirebaseActive ? 'Sinkron Cloud Firebase' : 'Mode Lokal'}
               </span>
             </div>
 

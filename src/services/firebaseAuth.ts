@@ -17,61 +17,74 @@ export async function getOrCreateUserProfile(
   fbUser: FirebaseUser,
   defaultRole: UserRole = 'student'
 ): Promise<User> {
+  const now = new Date().toISOString()
+  const fallbackRole: UserRole = fbUser.email?.toLowerCase().includes('guru') ? 'teacher' : defaultRole
+
   if (!db) {
     return {
       id: fbUser.uid,
       name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
       email: fbUser.email || '',
-      role: defaultRole,
+      role: fallbackRole,
       status: 'active',
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-    }
-  }
-
-  const userDocRef = doc(db, 'users', fbUser.uid)
-  const userSnapshot = await getDoc(userDocRef)
-
-  const now = new Date().toISOString()
-
-  if (userSnapshot.exists()) {
-    const data = userSnapshot.data()
-    // Perbarui lastLoginAt di Firestore
-    try {
-      await updateDoc(userDocRef, { lastLoginAt: now })
-    } catch {
-      // Abaikan jika rule Firestore terbatas
-    }
-
-    return {
-      id: fbUser.uid,
-      name: data.name || fbUser.displayName || 'Pengguna',
-      email: data.email || fbUser.email || '',
-      role: (data.role as UserRole) || defaultRole,
-      status: data.status || 'active',
-      createdAt: data.createdAt || now,
+      createdAt: now,
       lastLoginAt: now,
     }
   }
 
-  // Jika dokumen profil belum ada di Firestore, buat profil baru
-  const newProfile: User = {
-    id: fbUser.uid,
-    name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna Baru',
-    email: fbUser.email || '',
-    role: defaultRole,
-    status: 'active',
-    createdAt: now,
-    lastLoginAt: now,
-  }
-
   try {
-    await setDoc(userDocRef, newProfile)
-  } catch (err) {
-    console.warn('Gagal menyimpan profil baru ke Firestore:', err)
-  }
+    const userDocRef = doc(db, 'users', fbUser.uid)
+    const userSnapshot = await getDoc(userDocRef)
 
-  return newProfile
+    if (userSnapshot.exists()) {
+      const data = userSnapshot.data()
+      try {
+        await updateDoc(userDocRef, { lastLoginAt: now })
+      } catch {
+        // Abaikan jika rule Firestore terbatas
+      }
+
+      return {
+        id: fbUser.uid,
+        name: data.name || fbUser.displayName || 'Pengguna',
+        email: data.email || fbUser.email || '',
+        role: (data.role as UserRole) || fallbackRole,
+        status: data.status || 'active',
+        createdAt: data.createdAt || now,
+        lastLoginAt: now,
+      }
+    }
+
+    // Jika dokumen profil belum ada di Firestore, buat profil baru
+    const newProfile: User = {
+      id: fbUser.uid,
+      name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
+      email: fbUser.email || '',
+      role: fallbackRole,
+      status: 'active',
+      createdAt: now,
+      lastLoginAt: now,
+    }
+
+    try {
+      await setDoc(userDocRef, newProfile)
+    } catch (err) {
+      console.warn('Gagal menyimpan profil baru ke Firestore (periksa Firestore Security Rules):', err)
+    }
+
+    return newProfile
+  } catch (err) {
+    console.warn('Gagal membaca profil dari Firestore:', err)
+    return {
+      id: fbUser.uid,
+      name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
+      email: fbUser.email || '',
+      role: fallbackRole,
+      status: 'active',
+      createdAt: now,
+      lastLoginAt: now,
+    }
+  }
 }
 
 /**
@@ -92,14 +105,22 @@ export async function firebaseSignIn(
   } catch (error: any) {
     console.error('Firebase sign-in error:', error)
     let message = 'Terjadi kesalahan saat masuk dengan Firebase.'
-    if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-      message = 'Email atau kata sandi tidak sesuai.'
+    if (error.code === 'auth/operation-not-allowed') {
+      message = 'Metode login Email/Password belum diaktifkan di Firebase Console. Buka Firebase Console > Authentication > Sign-in method lalu aktifkan "Email/Password".'
+    } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+      message = 'Email atau kata sandi tidak sesuai. Jika ini akun baru, silakan daftar pada tab "Daftar Akun Baru".'
     } else if (error.code === 'auth/user-not-found') {
-      message = 'Akun dengan email ini belum terdaftar.'
+      message = 'Akun dengan email ini belum terdaftar di Firebase. Silakan daftar pada tab "Daftar Akun Baru".'
     } else if (error.code === 'auth/invalid-email') {
       message = 'Format alamat email tidak valid.'
     } else if (error.code === 'auth/too-many-requests') {
       message = 'Terlalu banyak percobaan masuk yang gagal. Silakan tunggu beberapa saat.'
+    } else if (error.code === 'auth/unauthorized-domain') {
+      message = 'Domain aplikasi ini belum diizinkan. Buka Firebase Console > Authentication > Settings > Authorized domains dan tambahkan domain yang digunakan.'
+    } else if (error.code === 'auth/network-request-failed') {
+      message = 'Gagal terhubung ke Firebase. Periksa koneksi internet Anda.'
+    } else if (error.message) {
+      message = error.message
     }
     return { success: false, error: message }
   }
@@ -144,19 +165,31 @@ export async function firebaseSignUp(
     }
 
     if (db) {
-      await setDoc(doc(db, 'users', fbUser.uid), newProfile)
+      try {
+        await setDoc(doc(db, 'users', fbUser.uid), newProfile)
+      } catch (firestoreErr) {
+        console.warn('Gagal menyimpan profil ke Firestore (periksa Firestore Security Rules):', firestoreErr)
+      }
     }
 
     return { success: true, user: newProfile }
   } catch (error: any) {
     console.error('Firebase sign-up error:', error)
     let message = 'Pendaftaran gagal.'
-    if (error.code === 'auth/email-already-in-use') {
-      message = 'Alamat email ini sudah terdaftar. Silakan langsung masuk.'
+    if (error.code === 'auth/operation-not-allowed') {
+      message = 'Metode pendaftaran Email/Password belum diaktifkan di Firebase Console. Buka Firebase Console > Authentication > Sign-in method lalu aktifkan "Email/Password".'
+    } else if (error.code === 'auth/email-already-in-use') {
+      message = 'Alamat email ini sudah terdaftar di Firebase. Silakan gunakan tab "Masuk ke Akun".'
     } else if (error.code === 'auth/weak-password') {
       message = 'Kata sandi terlalu lemah. Minimal 6 karakter.'
     } else if (error.code === 'auth/invalid-email') {
       message = 'Format alamat email tidak valid.'
+    } else if (error.code === 'auth/unauthorized-domain') {
+      message = 'Domain aplikasi ini belum diizinkan di Firebase Console. Buka Authentication > Settings > Authorized domains.'
+    } else if (error.code === 'auth/network-request-failed') {
+      message = 'Gagal terhubung ke Firebase. Periksa koneksi internet Anda.'
+    } else if (error.message) {
+      message = error.message
     }
     return { success: false, error: message }
   }
