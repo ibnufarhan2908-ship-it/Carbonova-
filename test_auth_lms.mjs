@@ -59,7 +59,7 @@ async function runTests() {
 
   // --- 2. PENGUJIAN INISIALISASI DATABASE & SEEDING AKUN DEMO ---
   console.log('\n--- 2. Pengujian Database & Seeding Akun Demo ---')
-  const { initDatabase, getAllUsers, getStudents, getStoredUserByEmail } = await import('./src/services/db.ts')
+  const { initDatabase, getAllUsers, getStoredUserByEmail } = await import('./src/services/db.ts')
 
   await initDatabase()
   const users = getAllUsers()

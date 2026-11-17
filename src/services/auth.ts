@@ -1,4 +1,4 @@
-import type { AuthSession, User, RegisterPayload, AuthResponse, StoredUser } from '../types/auth.ts'
+import type { AuthSession, User, UserRole, RegisterPayload, AuthResponse, StoredUser } from '../types/auth.ts'
 import { verifyPassword, generateSessionToken, generateSalt, hashPassword } from './crypto.ts'
 import {
   initDatabase,
@@ -7,6 +7,7 @@ import {
   updateUserLastLogin,
   isEmailRegistered,
   saveNewUser,
+  createLocalUser,
 } from './db.ts'
 
 const SESSION_STORAGE_KEY = 'carbonova_auth_session_v1'
@@ -20,8 +21,23 @@ const DEFAULT_TEACHER_CODE = 'GURU-CARBONOVA-2026'
  * Menjalankan validasi server-grade terhadap format data, kekuatan kata sandi,
  * keunikan email, dan keabsahan kode undangan guru.
  */
-export async function register(payload: RegisterPayload): Promise<AuthResponse> {
+export async function register(
+  payloadOrName: RegisterPayload | string,
+  emailParam?: string,
+  passParam?: string,
+  roleParam?: UserRole
+): Promise<AuthResponse> {
   await initDatabase()
+
+  const payload: RegisterPayload =
+    typeof payloadOrName === 'string'
+      ? {
+          name: payloadOrName,
+          email: emailParam || '',
+          password: passParam || '',
+          role: roleParam || 'student',
+        }
+      : payloadOrName
 
   const { name, email, password, confirmPassword, role, invitationCode } = payload
 
