@@ -7,7 +7,6 @@ import {
   updateUserLastLogin,
   isEmailRegistered,
   saveNewUser,
-  createLocalUser,
 } from './db.ts'
 
 const SESSION_STORAGE_KEY = 'carbonova_auth_session_v1'

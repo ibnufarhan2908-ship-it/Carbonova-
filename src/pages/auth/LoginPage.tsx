@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Atom,
   Mail,
@@ -193,25 +193,46 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Header Switcher Login / Register */}
-          <div className="flex rounded-2xl bg-slate-100/80 p-1 mb-6 border border-slate-200/60">
-            <div className="flex-1 py-2 text-center text-xs font-bold bg-white text-[#101C3A] rounded-xl shadow-xs">
-              Masuk
-            </div>
-            <Link
-              to="/register"
-              className="flex-1 py-2 text-center text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors rounded-xl"
+          {/* Mode Switcher Tabs (Masuk vs Daftar) */}
+          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setAuthError(null)
+                setAuthSuccess(null)
+                setValidationErrors({})
+              }}
+              className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                mode === 'login'
+                  ? 'bg-white text-[#101C3A] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Masuk ke Akun
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('register')
+                setAuthError(null)
+                setAuthSuccess(null)
+                setValidationErrors({})
+              }}
+              className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                mode === 'register'
+                  ? 'bg-white text-[#101C3A] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
             >
               Daftar Akun Baru
-            </Link>
+            </button>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-[#101C3A]">Masuk ke Akun</h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Gunakan email dan kata sandi terdaftar untuk mengakses materi dan dashboard pembelajaran.
-            </p>
-          </div>
+          <div className="mb-5">
+            <h2 className="text-xl font-bold text-[#101C3A]">
+              {mode === 'login' ? 'Selamat Datang Kembali' : 'Buat Akun Pembelajaran'}
+            </h2>
             <p className="text-xs text-slate-500 mt-1">
               {mode === 'login'
                 ? 'Gunakan email dan kata sandi terdaftar untuk masuk ke portal.'
