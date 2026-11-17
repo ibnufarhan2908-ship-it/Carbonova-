@@ -104,16 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const cleanEmail = email.trim().toLowerCase()
 
-      // 1. Akun demo Carbonova diproses langsung melalui database lokal
-      if (cleanEmail.includes('.demo@carbonova.test')) {
-        const localRes = await authLogin(cleanEmail, pass)
-        if (localRes.success && localRes.user) {
-          setUser(localRes.user)
-          return { success: true }
-        }
-      }
-
-      // 2. Jika konfigurasi Firebase aktif, gunakan Firebase Authentication
+      // 1. Jika konfigurasi Firebase aktif, gunakan Firebase Authentication
       if (isFirebaseConfigured) {
         const fbRes = await firebaseSignIn(cleanEmail, pass)
         if (fbRes.success && fbRes.user) {
@@ -121,7 +112,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { success: true }
         }
 
-        // Fallback ke penyimpanan lokal jika akun terdaftar di lokal
+        // Khusus akun demo resmi Carbonova:
+        // Jika belum terdaftar di Firebase Authentication, otomatis daftarkan ke Firebase agar tersimpan di console!
+        if (cleanEmail.includes('.demo@carbonova.test')) {
+          const isTeacher = cleanEmail.includes('guru')
+          const demoName = isTeacher ? 'Guru Demo' : 'Siswa Demo'
+          const demoRole: UserRole = isTeacher ? 'teacher' : 'student'
+
+          const signUpRes = await firebaseSignUp(demoName, cleanEmail, pass, demoRole)
+          if (signUpRes.success && signUpRes.user) {
+            setUser(signUpRes.user)
+            return { success: true }
+          }
+        }
+
+        // Fallback ke penyimpanan lokal jika akun terdaftar di lokal / offline
         const localRes = await authLogin(cleanEmail, pass)
         if (localRes.success && localRes.user) {
           setUser(localRes.user)
@@ -131,7 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: fbRes.error || localRes.error || 'Autentikasi gagal.' }
       }
 
-      // 3. Autentikasi lokal biasa
+      // 2. Mode lokal biasa jika Firebase belum dikonfigurasi
       const res = await authLogin(cleanEmail, pass)
       if (res.success && res.user) {
         setUser(res.user)
