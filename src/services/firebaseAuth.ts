@@ -6,7 +6,7 @@ import {
   updateProfile,
   type User as FirebaseUser,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, isFirebaseConfigured } from './firebase.ts'
 import type { User, UserRole } from '../types/auth.ts'
 
@@ -44,30 +44,43 @@ export async function getOrCreateUserProfile(
         // Abaikan jika rule Firestore terbatas
       }
 
+      let parsedRole: UserRole = fallbackRole
+      if (data.role === 'siswa' || data.role === 'student') parsedRole = 'student'
+      else if (data.role === 'guru' || data.role === 'teacher') parsedRole = 'teacher'
+
       return {
         id: fbUser.uid,
         name: data.name || fbUser.displayName || 'Pengguna',
         email: data.email || fbUser.email || '',
-        role: (data.role as UserRole) || fallbackRole,
+        role: parsedRole,
+        kelas: data.kelas || '-',
         status: data.status || 'active',
-        createdAt: data.createdAt || now,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : (data.createdAt || now),
         lastLoginAt: now,
       }
     }
 
     // Jika dokumen profil belum ada di Firestore, buat profil baru
+    const roleYangDipilih = (fallbackRole === 'teacher' || fallbackRole === 'guru') ? 'guru' : 'siswa'
     const newProfile: User = {
       id: fbUser.uid,
       name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
       email: fbUser.email || '',
       role: fallbackRole,
+      kelas: '-',
       status: 'active',
       createdAt: now,
       lastLoginAt: now,
     }
 
     try {
-      await setDoc(userDocRef, newProfile)
+      await setDoc(userDocRef, {
+        name: newProfile.name,
+        email: newProfile.email,
+        role: roleYangDipilih,
+        kelas: '-',
+        createdAt: serverTimestamp(),
+      })
     } catch (err) {
       console.warn('Gagal menyimpan profil baru ke Firestore (periksa Firestore Security Rules):', err)
     }
@@ -133,7 +146,8 @@ export async function firebaseSignUp(
   name: string,
   email: string,
   pass: string,
-  role: UserRole = 'student'
+  role: UserRole = 'student',
+  kelas: string = '-'
 ): Promise<{ success: boolean; user?: User; error?: string }> {
   if (!auth || !isFirebaseConfigured) {
     return { success: false, error: 'Layanan Firebase belum diinisialisasi atau konfigurasi kosong.' }
@@ -152,13 +166,17 @@ export async function firebaseSignUp(
       }
     }
 
-    // Buat dokumen profil di Firestore
+    // Role yang disimpan ke Firestore: "guru" atau "siswa"
+    const roleYangDipilih = (role === 'teacher' || role === 'guru') ? 'guru' : 'siswa'
+
+    // Buat dokumen profil di Firestore menggunakan UID sebagai Document ID
     const now = new Date().toISOString()
     const newProfile: User = {
       id: fbUser.uid,
       name: name.trim() || fbUser.email?.split('@')[0] || 'Pengguna',
-      email: fbUser.email || '',
-      role,
+      email: email.trim().toLowerCase(),
+      role: (role === 'teacher' || role === 'guru') ? 'teacher' : 'student',
+      kelas: kelas.trim() || '-',
       status: 'active',
       createdAt: now,
       lastLoginAt: now,
@@ -166,7 +184,13 @@ export async function firebaseSignUp(
 
     if (db) {
       try {
-        await setDoc(doc(db, 'users', fbUser.uid), newProfile)
+        await setDoc(doc(db, 'users', fbUser.uid), {
+          name: newProfile.name,
+          email: newProfile.email,
+          role: roleYangDipilih,
+          kelas: newProfile.kelas,
+          createdAt: serverTimestamp(),
+        })
       } catch (firestoreErr) {
         console.warn('Gagal menyimpan profil ke Firestore (periksa Firestore Security Rules):', firestoreErr)
       }

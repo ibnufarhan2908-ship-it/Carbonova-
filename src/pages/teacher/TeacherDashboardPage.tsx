@@ -16,13 +16,24 @@ import {
   Search,
   ArrowRight,
   Sparkles,
+  Loader2,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { db, isFirebaseConfigured } from '../../services/firebase'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from 'firebase/firestore'
 import {
   getTeacherStats,
-  getStudents,
-  getAllSubmissions,
-  getSubmissionsByStudent,
+  getStudents as getLocalStudents,
+  getAllSubmissions as getLocalSubmissions,
   syncFromFirestore,
 } from '../../services/db'
 import type { StudentQuizSubmission } from '../../types/auth'
@@ -31,6 +42,16 @@ import type { QuizResult } from '../../types/quiz'
 
 interface TeacherDashboardPageProps {
   initialView?: 'overview' | 'students' | 'results'
+}
+
+interface StudentItem {
+  id: string
+  name: string
+  email: string
+  role: string
+  kelas: string
+  createdAt: any
+  status?: string
 }
 
 export default function TeacherDashboardPage({ initialView }: TeacherDashboardPageProps) {
@@ -46,34 +67,274 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
     return 'overview'
   }, [initialView, location.pathname])
 
-  // Data dari database
-  const stats = getTeacherStats()
-  const students = getStudents()
-  const submissions = getAllSubmissions()
+  // State Data Firestore Real-Time
+  const [firestoreStudents, setFirestoreStudents] = useState<StudentItem[]>([])
+  const [quizResultsList, setQuizResultsList] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // State untuk pencarian & modal detail
+  // State Pencarian & Filter pada Data Siswa
+  const [studentSearchQuery, setStudentSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<'Semua' | 'Siswa Demo' | 'Siswa Asli'>('Semua')
+
+  // State untuk pencarian pada tab Hasil Pengerjaan & modal detail
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubmission, setSelectedSubmission] = useState<StudentQuizSubmission | null>(null)
-  const [, setRefreshTick] = useState(0)
 
+  // Helper identifikasi akun Siswa Demo
+  const isDemoStudent = (email: string) => {
+    const clean = (email || '').toLowerCase().trim()
+    return clean === 'siswa.demo@carbonova.test' || clean.endsWith('@carbonova.test')
+  }
+
+  // 1. REAL-TIME LISTENER SISWA & QUIZ RESULTS DARI FIRESTORE
   useEffect(() => {
-    syncFromFirestore().then(() => {
-      setRefreshTick((prev) => prev + 1)
-    })
+    // Sinkronisasi data lokal jika ada
+    syncFromFirestore().catch(() => {})
+
+    // Coba seeding akun Siswa Demo ke collection users di Firestore jika belum ada
+    if (db && isFirebaseConfigured) {
+      const firestore = db
+      const ensureDemoStudentDoc = async () => {
+        try {
+          const demoDocRef = doc(firestore, 'users', 'demo-siswa-carbonova')
+          const snap = await getDoc(demoDocRef)
+          if (!snap.exists()) {
+            await setDoc(demoDocRef, {
+              name: 'Siswa Demo',
+              email: 'siswa.demo@carbonova.test',
+              role: 'siswa',
+              kelas: 'XI MIPA 1',
+              createdAt: serverTimestamp(),
+              status: 'active',
+            })
+          }
+        } catch {
+          // Abaikan jika Firestore Security Rules menolak pembuatan langsung oleh role saat ini
+        }
+      }
+      ensureDemoStudentDoc()
+    }
+
+    if (!db || !isFirebaseConfigured) {
+      // Fallback ke penyimpanan lokal jika Firebase belum aktif
+      const local = getLocalStudents().map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        role: 'siswa',
+        kelas: s.kelas || 'XI MIPA 1',
+        createdAt: s.createdAt,
+      }))
+      setFirestoreStudents(local)
+      const localSubs = getLocalSubmissions().map((s) => ({
+        ...s,
+        studentEmail: s.userEmail,
+      }))
+      setQuizResultsList(localSubs)
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+
+    // QUERY DATA SISWA: collection "users" where "role" == "siswa"
+    const qStudents = query(
+      collection(db, 'users'),
+      where('role', '==', 'siswa')
+    )
+
+    const unsubscribeStudents = onSnapshot(
+      qStudents,
+      (snapshot) => {
+        const studentList: StudentItem[] = []
+        snapshot.forEach((docSnap) => {
+          const d = docSnap.data()
+          studentList.push({
+            id: docSnap.id,
+            name: d.name || d.nama || 'Siswa',
+            email: d.email || '',
+            role: d.role || 'siswa',
+            kelas: d.kelas || d.class || '-',
+            createdAt: d.createdAt,
+            status: d.status || 'active',
+          })
+        })
+
+        // Pastikan Siswa Demo selalu ada di tampilan jika belum terisi di Firestore
+        const hasDemo = studentList.some(
+          (s) => s.email.toLowerCase() === 'siswa.demo@carbonova.test'
+        )
+        if (!hasDemo) {
+          studentList.unshift({
+            id: 'demo-siswa-default',
+            name: 'Siswa Demo',
+            email: 'siswa.demo@carbonova.test',
+            role: 'siswa',
+            kelas: 'XI MIPA 1',
+            createdAt: '2026-10-05T09:30:00.000Z',
+            status: 'active',
+          })
+        }
+
+        setFirestoreStudents(studentList)
+        setIsLoading(false)
+        setError(null)
+      },
+      (err) => {
+        console.error('Firestore onSnapshot users error:', err)
+        setError(err.message)
+        setIsLoading(false)
+        // Fallback ke data lokal
+        const local = getLocalStudents().map((s) => ({
+          id: s.id,
+          name: s.name,
+          email: s.email,
+          role: 'siswa',
+          kelas: s.kelas || 'XI MIPA 1',
+          createdAt: s.createdAt,
+        }))
+        setFirestoreStudents(local)
+      }
+    )
+
+    // LISTENER HASIL KUIS: collection "quiz_results"
+    const qQuiz = collection(db, 'quiz_results')
+    const unsubscribeQuiz = onSnapshot(
+      qQuiz,
+      (snapshot) => {
+        const results: any[] = []
+        snapshot.forEach((docSnap) => {
+          results.push({ id: docSnap.id, ...docSnap.data() })
+        })
+        setQuizResultsList(results)
+      },
+      (err) => {
+        console.warn('Firestore onSnapshot quiz_results:', err)
+        // Fallback jika collection quiz_results belum ada
+        const localSubs = getLocalSubmissions().map((s) => ({
+          ...s,
+          studentEmail: s.userEmail,
+        }))
+        setQuizResultsList(localSubs)
+      }
+    )
+
+    return () => {
+      unsubscribeStudents()
+      unsubscribeQuiz()
+    }
   }, [])
 
-  // Filter hasil pengerjaan
+  // 2. HITUNG STATISTIK KUIS PER SISWA
+  const getStudentQuizStats = (studentEmail: string, studentId: string) => {
+    const emailLower = (studentEmail || '').toLowerCase().trim()
+    const studentQuizzes = quizResultsList.filter((q) => {
+      const qEmail = (q.studentEmail || q.userEmail || '').toLowerCase().trim()
+      return (qEmail && qEmail === emailLower) || (q.userId && q.userId === studentId)
+    })
+
+    const totalQuizzes = studentQuizzes.length
+    if (totalQuizzes === 0) {
+      return {
+        totalQuizzes: 0,
+        lastScore: '-',
+        avgScore: '-',
+        quizzes: [],
+      }
+    }
+
+    // Urutkan berdasarkan waktu pengerjaan terbaru
+    studentQuizzes.sort((a, b) => {
+      const getMs = (item: any) => {
+        if (item.createdAt?.toDate) return item.createdAt.toDate().getTime()
+        if (item.completedAt?.toDate) return item.completedAt.toDate().getTime()
+        if (item.completedAt) return new Date(item.completedAt).getTime()
+        if (item.createdAt) return new Date(item.createdAt).getTime()
+        if (item.timestamp) return Number(item.timestamp)
+        return 0
+      }
+      return getMs(b) - getMs(a)
+    })
+
+    const latestScoreRaw = studentQuizzes[0].score ?? studentQuizzes[0].nilai ?? 0
+    const lastScore = `${latestScoreRaw} / 100`
+
+    const totalScore = studentQuizzes.reduce((sum, q) => {
+      const sc = q.score ?? q.nilai ?? 0
+      return sum + Number(sc)
+    }, 0)
+    const avgScore = `${Math.round(totalScore / totalQuizzes)} / 100`
+
+    return {
+      totalQuizzes,
+      lastScore,
+      avgScore,
+      quizzes: studentQuizzes,
+    }
+  }
+
+  // 3. STATISTIK RINGKASAN TOTAL SISWA
+  const totalX = firestoreStudents.length
+  const demoY = firestoreStudents.filter((s) => isDemoStudent(s.email)).length
+  const realZ = firestoreStudents.filter((s) => !isDemoStudent(s.email)).length
+
+  // 4. FILTER DAN PENCARIAN DATA SISWA
+  const filteredStudents = useMemo(() => {
+    return firestoreStudents.filter((student) => {
+      const isDemo = isDemoStudent(student.email)
+
+      // Filter Kategori: Semua | Siswa Demo | Siswa Asli
+      if (categoryFilter === 'Siswa Demo' && !isDemo) return false
+      if (categoryFilter === 'Siswa Asli' && isDemo) return false
+
+      // Input Pencarian (nama / email)
+      if (studentSearchQuery.trim()) {
+        const q = studentSearchQuery.toLowerCase().trim()
+        const matchName = student.name.toLowerCase().includes(q)
+        const matchEmail = student.email.toLowerCase().includes(q)
+        if (!matchName && !matchEmail) return false
+      }
+
+      return true
+    })
+  }, [firestoreStudents, categoryFilter, studentSearchQuery])
+
+  // Data submisi keseluruhan untuk tab Hasil Pengerjaan
+  const localStats = getTeacherStats()
+  const allSubmissions = useMemo(() => {
+    if (quizResultsList.length > 0) {
+      return quizResultsList.map((q) => ({
+        id: q.id,
+        userId: q.userId || '',
+        userName: q.studentName || q.userName || 'Siswa',
+        userEmail: q.studentEmail || q.userEmail || '',
+        quizId: q.quizId || 'quiz',
+        quizTitle: q.quizTitle || 'Evaluasi Kuis',
+        category: q.category || 'Kimia Karbon',
+        completedAt: q.completedAt?.toDate ? q.completedAt.toDate().toISOString() : (q.completedAt || q.createdAt || new Date().toISOString()),
+        totalQuestions: q.totalQuestions || 5,
+        correctAnswers: q.correctAnswers || 0,
+        incorrectAnswers: q.incorrectAnswers || 0,
+        score: q.score ?? q.nilai ?? 0,
+        answers: q.answers || [],
+      })) as StudentQuizSubmission[]
+    }
+    return getLocalSubmissions()
+  }, [quizResultsList])
+
+  // Filter hasil pengerjaan (tab Results)
   const filteredSubmissions = useMemo(() => {
-    if (!searchQuery.trim()) return submissions
+    if (!searchQuery.trim()) return allSubmissions
     const q = searchQuery.toLowerCase()
-    return submissions.filter(
+    return allSubmissions.filter(
       (s) =>
         s.userName.toLowerCase().includes(q) ||
         s.userEmail.toLowerCase().includes(q) ||
         s.quizTitle.toLowerCase().includes(q) ||
         s.category.toLowerCase().includes(q)
     )
-  }, [submissions, searchQuery])
+  }, [allSubmissions, searchQuery])
 
   const handleLogout = () => {
     logout()
@@ -81,17 +342,23 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
   }
 
   // Format tanggal Indonesia
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateVal: any) => {
+    if (!dateVal) return '-'
     try {
-      return new Date(dateStr).toLocaleDateString('id-ID', {
+      let date: Date
+      if (dateVal.toDate && typeof dateVal.toDate === 'function') {
+        date = dateVal.toDate()
+      } else {
+        date = new Date(dateVal)
+      }
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
       })
     } catch {
-      return dateStr
+      return '-'
     }
   }
 
@@ -119,6 +386,190 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
       active: activeView === 'results',
     },
   ]
+
+  // Komponen Tabel Data Siswa Lengkap
+  const renderStudentsTable = () => (
+    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-[#101C3A]">Data Siswa Terdaftar</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Data real-time seluruh siswa dari collection Firestore <code className="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700 font-mono text-[11px]">users</code>
+          </p>
+        </div>
+
+        {/* Informasi Total Siswa: Total Siswa Terdaftar: X siswa (Y Demo + Z Asli) */}
+        <div className="text-xs sm:text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200/90 px-4 py-2 rounded-2xl shadow-2xs self-start sm:self-auto">
+          Total Siswa Terdaftar:{' '}
+          <span className="text-[#101C3A] font-extrabold">{totalX} siswa</span>{' '}
+          <span className="text-slate-500 font-medium">
+            ({demoY} Demo + {realZ} Asli)
+          </span>
+        </div>
+      </div>
+
+      {/* Kontrol Pencarian & Filter Kategori */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+        {/* Input Pencarian */}
+        <div className="relative flex-1 max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <Search className="w-4 h-4" />
+          </div>
+          <input
+            type="text"
+            value={studentSearchQuery}
+            onChange={(e) => setStudentSearchQuery(e.target.value)}
+            placeholder="Cari nama / email siswa..."
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all shadow-2xs"
+          />
+        </div>
+
+        {/* Filter Kategori: Semua | Siswa Demo | Siswa Asli */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
+          {(['Semua', 'Siswa Demo', 'Siswa Asli'] as const).map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setCategoryFilter(cat)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                categoryFilter === cat
+                  ? 'bg-white text-[#101C3A] shadow-xs'
+                  : 'text-slate-600 hover:text-[#101C3A]'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Loading & Error State */}
+      {isLoading ? (
+        <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+          <Loader2 className="w-8 h-8 text-[#1DAA9A] animate-spin" />
+          <p className="text-xs font-semibold">Memuat data siswa secara real-time dari Firestore...</p>
+        </div>
+      ) : error ? (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+          <div>
+            <p className="font-bold">Informasi Koneksi Firestore</p>
+            <p className="mt-0.5 text-amber-700">{error}. Menampilkan data siswa lokal/cache.</p>
+          </div>
+        </div>
+      ) : filteredStudents.length === 0 ? (
+        <div className="py-12 text-center rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 p-6">
+          <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="text-sm font-bold text-slate-700">Tidak Ada Siswa Ditemukan</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            {studentSearchQuery
+              ? `Tidak ada siswa yang cocok dengan pencarian "${studentSearchQuery}".`
+              : 'Belum ada akun siswa pada kategori ini.'}
+          </p>
+        </div>
+      ) : (
+        /* Tabel Data Siswa dengan 7 Kolom Sesuai Ketentuan */
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th className="py-3 px-4">Nama</th>
+                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Kelas</th>
+                <th className="py-3 px-4">Tanggal Daftar</th>
+                <th className="py-3 px-4">Jumlah Kuis Dikerjakan</th>
+                <th className="py-3 px-4">Nilai Terakhir</th>
+                <th className="py-3 px-4">Nilai Rata-rata</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm">
+              {filteredStudents.map((student) => {
+                const quizStats = getStudentQuizStats(student.email, student.id)
+                const isDemo = isDemoStudent(student.email)
+
+                return (
+                  <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
+                    {/* Kolom 1: Nama */}
+                    <td className="py-3.5 px-4 font-bold text-slate-800">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#101C3A] to-[#1DAA9A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                          {student.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="block font-bold text-slate-800 leading-snug">
+                            {student.name}
+                          </span>
+                          {isDemo ? (
+                            <span className="inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                              Akun Demo
+                            </span>
+                          ) : (
+                            <span className="inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Akun Asli
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Kolom 2: Email */}
+                    <td className="py-3.5 px-4 text-slate-600 font-mono text-xs">
+                      {student.email}
+                    </td>
+
+                    {/* Kolom 3: Kelas */}
+                    <td className="py-3.5 px-4 text-xs font-semibold text-slate-700">
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-medium border border-slate-200/60 inline-block">
+                        {student.kelas || '-'}
+                      </span>
+                    </td>
+
+                    {/* Kolom 4: Tanggal Daftar */}
+                    <td className="py-3.5 px-4 text-xs text-slate-500">
+                      {formatDate(student.createdAt)}
+                    </td>
+
+                    {/* Kolom 5: Jumlah Kuis Dikerjakan */}
+                    <td className="py-3.5 px-4 text-xs font-semibold text-slate-700">
+                      {quizStats.totalQuizzes === 0 ? (
+                        <span className="text-slate-400">0</span>
+                      ) : (
+                        <span className="text-[#101C3A] font-bold">
+                          {quizStats.totalQuizzes} kuis
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Kolom 6: Nilai Terakhir */}
+                    <td className="py-3.5 px-4 text-xs font-bold text-slate-800">
+                      {quizStats.lastScore === '-' ? (
+                        <span className="text-slate-400 font-normal italic">-</span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 font-bold">
+                          {quizStats.lastScore}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Kolom 7: Nilai Rata-rata */}
+                    <td className="py-3.5 px-4 text-xs font-bold text-slate-800">
+                      {quizStats.avgScore === '-' ? (
+                        <span className="text-slate-400 font-normal italic">-</span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
+                          {quizStats.avgScore}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-[#F5F7FB]">
@@ -148,7 +599,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
           <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 pr-4">
               <div className="w-10 h-10 rounded-xl bg-[#101C3A] text-white flex items-center justify-center font-bold text-sm">
-                GD
+                {user?.name ? user.name.substring(0, 2).toUpperCase() : 'GD'}
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-800 leading-tight">
@@ -190,7 +641,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
             ))}
           </div>
 
-          {/* Shortcut Navigasi ke Materi & Latihan yang sudah ada (sesuai batasan PRD) */}
+          {/* Shortcut Navigasi ke Materi & Latihan */}
           <div className="flex items-center gap-2">
             <Link
               to="/materi"
@@ -214,7 +665,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
         {/* ========================================================= */}
         {activeView === 'overview' && (
           <div className="space-y-8">
-            {/* 6 Metrik Ringkasan Utama (Sesuai Kriteria 5) */}
+            {/* 6 Metrik Ringkasan Utama */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {/* 1. Total Siswa Terdaftar */}
               <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs relative overflow-hidden group hover:shadow-md transition-shadow">
@@ -227,11 +678,11 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold text-[#101C3A] mb-1">
-                  {stats.totalStudents}
+                  {totalX}
                 </div>
                 <p className="text-xs text-slate-500">
-                  {stats.totalStudents > 0
-                    ? `${stats.totalStudents} siswa terverifikasi di database`
+                  {totalX > 0
+                    ? `${totalX} siswa terdaftar (${demoY} Demo, ${realZ} Asli)`
                     : 'Belum ada siswa terdaftar'}
                 </p>
               </div>
@@ -247,7 +698,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold text-[#101C3A] mb-1">
-                  {stats.totalMaterials}
+                  {localStats.totalMaterials}
                 </div>
                 <p className="text-xs text-slate-500">
                   Modul senyawa karbon terstruktur kurikulum SMA
@@ -265,7 +716,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold text-[#101C3A] mb-1">
-                  {stats.totalQuestions}
+                  {localStats.totalQuestions}
                 </div>
                 <p className="text-xs text-slate-500">
                   Bank soal evaluasi penalaran HOTS aktif
@@ -283,10 +734,10 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold text-[#101C3A] mb-1">
-                  {stats.totalSubmissions}
+                  {allSubmissions.length}
                 </div>
                 <p className="text-xs text-slate-500">
-                  {stats.totalSubmissions > 0
+                  {allSubmissions.length > 0
                     ? `Total akumulasi submission latihan yang dikumpulkan`
                     : 'Belum ada submission latihan'}
                 </p>
@@ -303,12 +754,17 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold text-[#101C3A] mb-1">
-                  {stats.totalSubmissions > 0 ? `${stats.averageScore}` : '0'}
+                  {allSubmissions.length > 0
+                    ? Math.round(
+                        allSubmissions.reduce((acc, c) => acc + (c.score || 0), 0) /
+                          allSubmissions.length
+                      )
+                    : 0}
                   <span className="text-sm font-semibold text-slate-400 ml-1">/ 100</span>
                 </div>
                 <p className="text-xs text-slate-500">
-                  {stats.totalSubmissions > 0
-                    ? 'Dihitung murni dari data pengerjaan yang tersimpan'
+                  {allSubmissions.length > 0
+                    ? 'Dihitung murni dari seluruh data pengerjaan kuis siswa'
                     : 'Belum ada data nilai pengerjaan'}
                 </p>
               </div>
@@ -324,15 +780,18 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold text-[#101C3A] mb-1">
-                  {stats.uncompletedStudentsCount}
+                  {firestoreStudents.filter(
+                    (s) => getStudentQuizStats(s.email, s.id).totalQuizzes === 0
+                  ).length}
                 </div>
                 <p className="text-xs text-slate-500">
-                  {stats.uncompletedStudentsCount > 0
-                    ? 'Siswa belum pernah mengumpulkan evaluasi'
-                    : 'Semua siswa telah mulai mengerjakan evaluasi'}
+                  Siswa terdaftar yang belum memiliki riwayat kuis
                 </p>
               </div>
             </div>
+
+            {/* Tabel Data Siswa Terdaftar di Halaman Overview */}
+            {renderStudentsTable()}
 
             {/* Aktivitas Pengerjaan Terbaru */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6">
@@ -352,7 +811,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                 </Link>
               </div>
 
-              {submissions.length === 0 ? (
+              {allSubmissions.length === 0 ? (
                 <div className="py-12 text-center rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 p-6">
                   <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <h3 className="text-sm font-bold text-slate-700">Belum Ada Pengerjaan Latihan</h3>
@@ -373,7 +832,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
-                      {submissions.slice(0, 5).map((sub) => (
+                      {allSubmissions.slice(0, 5).map((sub) => (
                         <tr key={sub.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-3 px-4 font-bold text-slate-800">
                             {sub.userName}
@@ -403,7 +862,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                           <td className="py-3 px-4 text-right">
                             <button
                               onClick={() => setSelectedSubmission(sub)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-xs font-bold text-slate-700 transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5" />
                               <span>Detail</span>
@@ -422,106 +881,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
         {/* ========================================================= */}
         {/* VIEW 2: DAFTAR SISWA */}
         {/* ========================================================= */}
-        {activeView === 'students' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-[#101C3A]">Daftar Siswa Terdaftar</h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Seluruh akun siswa yang terdaftar di basis data Carbonova LMS
-                </p>
-              </div>
-              <div className="text-xs font-bold px-3 py-1.5 rounded-xl bg-teal-50 text-teal-800 border border-teal-200 self-start sm:self-auto">
-                Total: {students.length} Siswa
-              </div>
-            </div>
-
-            {students.length === 0 ? (
-              <div className="py-12 text-center rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 p-6">
-                <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-sm font-bold text-slate-700">Belum Ada Siswa Terdaftar</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Akun siswa terdaftar akan ditampilkan secara otomatis di sini.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      <th className="py-3 px-4">Nama Siswa</th>
-                      <th className="py-3 px-4">Alamat Email</th>
-                      <th className="py-3 px-4">Status Akun</th>
-                      <th className="py-3 px-4">Tanggal Pendaftaran</th>
-                      <th className="py-3 px-4">Latihan Selesai</th>
-                      <th className="py-3 px-4">Rata-rata Nilai</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
-                    {students.map((student) => {
-                      const studentSubs = getSubmissionsByStudent(student.id)
-                      const studentAvg =
-                        studentSubs.length > 0
-                          ? Math.round(
-                              studentSubs.reduce((acc, cur) => acc + cur.score, 0) /
-                                studentSubs.length
-                            )
-                          : '-'
-
-                      return (
-                        <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-4 px-4 font-bold text-slate-800 flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#101C3A] to-[#1DAA9A] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                              {student.name.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <span>{student.name}</span>
-                              <span className="block text-[11px] font-normal text-slate-400">
-                                ID: {student.id}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 text-slate-600 font-mono text-xs">
-                            {student.email}
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                              {student.status === 'active' ? 'Aktif' : 'Nonaktif'}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 text-xs text-slate-500">
-                            {formatDate(student.createdAt)}
-                          </td>
-                          <td className="py-4 px-4 text-xs font-semibold text-slate-700">
-                            {studentSubs.length} Pengerjaan
-                          </td>
-                          <td className="py-4 px-4 font-bold text-slate-800">
-                            {studentAvg !== '-' ? (
-                              <span
-                                className={`px-2 py-0.5 rounded-md text-xs ${
-                                  Number(studentAvg) >= 80
-                                    ? 'bg-emerald-50 text-emerald-700'
-                                    : Number(studentAvg) >= 60
-                                    ? 'bg-amber-50 text-amber-700'
-                                    : 'bg-rose-50 text-rose-700'
-                                }`}
-                              >
-                                {studentAvg} / 100
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 text-xs italic">Belum ada</span>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
+        {activeView === 'students' && renderStudentsTable()}
 
         {/* ========================================================= */}
         {/* VIEW 3: HASIL PENGERJAAN & PEMANTAUAN */}
@@ -539,7 +899,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
               </div>
 
               {/* Pencarian */}
-              {submissions.length > 0 && (
+              {allSubmissions.length > 0 && (
                 <div className="relative w-full sm:w-72">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <Search className="w-4 h-4" />
@@ -549,13 +909,13 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Cari siswa atau topik..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-2xs"
                   />
                 </div>
               )}
             </div>
 
-            {submissions.length === 0 ? (
+            {allSubmissions.length === 0 ? (
               <div className="py-16 text-center rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 p-6">
                 <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <h3 className="text-sm font-bold text-slate-700">Belum Ada Hasil Pengerjaan</h3>
@@ -620,7 +980,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                         <td className="py-3.5 px-4 text-right">
                           <button
                             onClick={() => setSelectedSubmission(sub)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-xs font-bold text-slate-700 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>Lihat Detail</span>

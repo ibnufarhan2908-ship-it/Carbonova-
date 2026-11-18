@@ -26,7 +26,8 @@ export interface AuthContextType {
     name: string,
     email: string,
     pass: string,
-    role?: UserRole
+    role?: UserRole,
+    kelas?: string
   ) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   refreshUser: () => void
@@ -152,14 +153,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string,
     email: string,
     pass: string,
-    role: UserRole = 'student'
+    role: UserRole = 'student',
+    kelas: string = '-'
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true)
     try {
       const cleanEmail = email.trim().toLowerCase()
 
       if (isFirebaseConfigured) {
-        const fbRes = await firebaseSignUp(name, cleanEmail, pass, role)
+        const fbRes = await firebaseSignUp(name, cleanEmail, pass, role, kelas)
         if (fbRes.success && fbRes.user) {
           setUser(fbRes.user)
           return { success: true }

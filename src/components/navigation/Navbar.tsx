@@ -44,14 +44,20 @@ export default function Navbar() {
     navigate('/login', { replace: true })
   }
 
-  const navLinks = [
-    { name: 'Beranda', path: '/beranda', icon: Atom },
-    { name: 'Materi', path: '/materi', icon: BookOpen, hasDropdown: true },
-    { name: 'Molecule Explorer', path: '/molekul', icon: Compass },
-    { name: 'Carbon Lab', path: '/lab', icon: FlaskConical },
-    { name: 'Latihan Soal', path: '/latihan', icon: GraduationCap },
+  const navLinks: {
+    name: string
+    path: string
+    icon: typeof Atom
+    hasDropdown?: boolean
+    dataTour?: string
+  }[] = [
+    { name: 'Beranda', path: '/beranda', icon: Atom, dataTour: 'home' },
+    { name: 'Materi', path: '/materi', icon: BookOpen, hasDropdown: true, dataTour: 'materi' },
+    { name: 'Molecule Explorer', path: '/molekul', icon: Compass, dataTour: 'molecule' },
+    { name: 'Carbon Lab', path: '/lab', icon: FlaskConical, dataTour: 'carbonlab' },
+    { name: 'Latihan Soal', path: '/latihan', icon: GraduationCap, dataTour: 'latihan' },
     { name: 'Riwayat Kuis', path: '/riwayat', icon: History },
-    { name: 'Tentang', path: '/tentang', icon: Info },
+    { name: 'Tentang', path: '/tentang', icon: Info, dataTour: 'tentang' },
   ]
 
   const dashboardPath = user?.role === 'teacher' ? '/guru/dashboard' : '/siswa/dashboard'
@@ -97,6 +103,7 @@ export default function Navbar() {
                   >
                     <Link
                       to={link.path}
+                      data-tour={link.dataTour}
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                         active
                           ? 'text-[#101C3A] bg-slate-100 font-bold'
@@ -163,6 +170,7 @@ export default function Navbar() {
                 <Link
                   key={link.path}
                   to={link.path}
+                  data-tour={link.dataTour}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                     active
                       ? 'text-[#101C3A] bg-slate-100/90 font-bold'
@@ -283,6 +291,7 @@ export default function Navbar() {
                 <Link
                   key={link.path}
                   to={link.path}
+                  data-tour={link.dataTour}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                     active
                       ? 'bg-teal-50 text-[#1DAA9A] font-bold'

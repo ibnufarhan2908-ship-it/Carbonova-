@@ -7,6 +7,7 @@ import {
   query,
   where,
   orderBy,
+  serverTimestamp,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from './firebase.ts'
 import type {
@@ -21,6 +22,7 @@ import { QUIZ_QUESTIONS } from '../data/questions.ts'
 
 const USERS_COLLECTION = 'users'
 const SUBMISSIONS_COLLECTION = 'quiz_submissions'
+const RESULTS_COLLECTION = 'quiz_results'
 const PROGRESS_COLLECTION = 'module_progress'
 
 /**
@@ -31,6 +33,18 @@ export async function saveSubmissionToFirestore(submission: StudentQuizSubmissio
   try {
     const submissionRef = doc(db, SUBMISSIONS_COLLECTION, submission.id)
     await setDoc(submissionRef, submission)
+
+    // Simpan juga ke collection 'quiz_results' dengan field studentEmail & score
+    const resultRef = doc(db, RESULTS_COLLECTION, submission.id)
+    await setDoc(resultRef, {
+      ...submission,
+      studentEmail: submission.userEmail,
+      studentName: submission.userName,
+      score: submission.score,
+      completedAt: submission.completedAt || new Date().toISOString(),
+      createdAt: serverTimestamp(),
+    })
+
     return true
   } catch (error) {
     console.error('Gagal menyimpan hasil kuis ke Firestore:', error)

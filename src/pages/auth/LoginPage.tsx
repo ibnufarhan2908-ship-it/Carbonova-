@@ -31,6 +31,7 @@ export default function LoginPage() {
   // Form states
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [kelas, setKelas] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [role, setRole] = useState<UserRole>('student')
@@ -129,7 +130,7 @@ export default function LoginPage() {
         }
       } else {
         // Mode Register
-        const result = await register(name, email, password, role)
+        const result = await register(name, email, password, role, kelas || 'XI MIPA 1')
         if (result.success) {
           setAuthSuccess('Pendaftaran berhasil! Mengalihkan ke dashboard...')
           setTimeout(() => {
@@ -302,6 +303,31 @@ export default function LoginPage() {
                     <span>•</span> {validationErrors.name}
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Field Kelas (Mode Register untuk Siswa) */}
+            {mode === 'register' && role === 'student' && (
+              <div>
+                <label
+                  htmlFor="kelas"
+                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
+                >
+                  Kelas
+                </label>
+                <div className="relative rounded-xl shadow-xs">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <GraduationCap className="w-4.5 h-4.5" />
+                  </div>
+                  <input
+                    id="kelas"
+                    type="text"
+                    value={kelas}
+                    onChange={(e) => setKelas(e.target.value)}
+                    placeholder="Contoh: XI MIPA 1 atau XI-B"
+                    className="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border bg-slate-50/50 text-[#101C3A] placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 border-slate-200 focus:border-[#1DAA9A] focus:ring-teal-100 transition-all"
+                  />
+                </div>
               </div>
             )}
 
