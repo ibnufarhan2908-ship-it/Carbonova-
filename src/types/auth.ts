@@ -1,10 +1,11 @@
-export type UserRole = 'teacher' | 'student'
+export type UserRole = 'teacher' | 'student' | 'guru' | 'siswa'
 
 export interface User {
   id: string
   name: string
   email: string
   role: UserRole
+  kelas?: string
   status: 'active' | 'inactive'
   createdAt: string
   lastLoginAt?: string
@@ -80,6 +81,7 @@ export interface RegisterPayload {
   confirmPassword?: string
   role: UserRole
   invitationCode?: string
+  kelas?: string
 }
 
 export interface AuthResponse {

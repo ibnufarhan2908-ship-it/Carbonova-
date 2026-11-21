@@ -1,3 +1,6 @@
+
+import OnboardingTour from "../components/OnboardingTour";
+
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -71,7 +74,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-24 sm:space-y-32 pb-24 overflow-hidden">
+    <div data-tour="home" className="space-y-24 sm:space-y-32 pb-24 overflow-hidden">
+      <OnboardingTour />
       {/* 1. HERO SECTION */}
       <section className="relative pt-12 sm:pt-20 lg:pt-24 pb-8 overflow-hidden">
         {/* Soft geometric background patterns */}
@@ -106,6 +110,7 @@ export default function HomePage() {
               {/* CTAs */}
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
                 <Link
+                  data-tour="materi"
                   to="/materi"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all"
                 >
@@ -115,6 +120,7 @@ export default function HomePage() {
                 </Link>
 
                 <Link
+                  data-tour="molekul"
                   to="/molekul"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#101C3A] border border-slate-300/80 text-sm font-bold shadow-2xs hover:shadow-xs transition-all"
                 >
@@ -326,11 +332,10 @@ export default function HomePage() {
             <button
               key={mol.id}
               onClick={() => setSelectedMoleculeId(mol.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                selectedMoleculeId === mol.id
-                  ? 'bg-[#101C3A] text-white shadow-xs'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${selectedMoleculeId === mol.id
+                ? 'bg-[#101C3A] text-white shadow-xs'
+                : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                }`}
             >
               <span>{mol.name}</span>
               <span className="ml-1.5 opacity-70 font-mono text-[11px]">
@@ -556,15 +561,14 @@ export default function HomePage() {
                   className={`w-full text-left p-4 rounded-2xl border text-xs sm:text-sm font-medium transition-all flex items-start gap-3 ${optionClasses}`}
                 >
                   <span
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
-                      isCorrect
-                        ? 'bg-emerald-600 text-white'
-                        : isWrong
-                          ? 'bg-rose-600 text-white'
-                          : isSelected
-                            ? 'bg-[#1DAA9A] text-white'
-                            : 'bg-slate-100 text-slate-600'
-                    }`}
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${isCorrect
+                      ? 'bg-emerald-600 text-white'
+                      : isWrong
+                        ? 'bg-rose-600 text-white'
+                        : isSelected
+                          ? 'bg-[#1DAA9A] text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
                   >
                     {String.fromCharCode(65 + idx)}
                   </span>
@@ -580,11 +584,10 @@ export default function HomePage() {
               <button
                 onClick={handleQuizSubmit}
                 disabled={selectedOption === null}
-                className={`w-full sm:w-auto px-6 py-3 rounded-xl text-xs font-bold transition-all ${
-                  selectedOption !== null
-                    ? 'bg-[#101C3A] hover:bg-[#182852] text-white shadow-sm'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                }`}
+                className={`w-full sm:w-auto px-6 py-3 rounded-xl text-xs font-bold transition-all ${selectedOption !== null
+                  ? 'bg-[#101C3A] hover:bg-[#182852] text-white shadow-sm'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
               >
                 Periksa Jawaban
               </button>

@@ -26,7 +26,8 @@ export interface AuthContextType {
     payloadOrName: RegisterPayload | string,
     email?: string,
     pass?: string,
-    role?: UserRole
+    role?: UserRole,
+    kelas?: string
   ) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   refreshUser: () => void
@@ -152,7 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     payloadOrName: RegisterPayload | string,
     email?: string,
     pass?: string,
-    role: UserRole = 'student'
+    role: UserRole = 'student',
+    kelas: string = '-'
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true)
     try {
@@ -163,13 +165,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: email || '',
               password: pass || '',
               role,
+              kelas: kelas || '-',
             }
-          : payloadOrName
+          : {
+              ...payloadOrName,
+              kelas: payloadOrName.kelas || kelas || '-',
+            }
 
       const cleanEmail = payload.email.trim().toLowerCase()
 
       if (isFirebaseConfigured) {
-        const fbRes = await firebaseSignUp(payload.name, cleanEmail, payload.password, payload.role)
+        const fbRes = await firebaseSignUp(
+          payload.name,
+          cleanEmail,
+          payload.password,
+          payload.role,
+          payload.kelas || '-'
+        )
         if (fbRes.success && fbRes.user) {
           setUser(fbRes.user)
           return { success: true }
