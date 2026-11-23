@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSearchParams, useLocation, Link } from 'react-router-dom'
 import {
   GraduationCap,
@@ -18,9 +18,10 @@ import { saveQuizSubmission } from '../services/db'
 import QuizHistoryView from '../components/quiz/QuizHistoryView'
 import type { QuizResult, QuizAnswerRecord } from '../types/quiz'
 import {
-  getSavedQuizAnswers,
-  saveQuizAnswers,
-  clearSavedQuizAnswers,
+  saveQuizDraft,
+  getQuizDraft,
+  clearQuizDraft,
+  clearUserState,
 } from '../utils/quizStorage'
 import { formatChemicalText } from '../components/ChemicalFormula'
 
@@ -30,18 +31,9 @@ export default function QuizPage() {
   const isHistoryRoute = location.pathname === '/riwayat' || searchParams.get('tab') === 'riwayat'
   const activeTab: 'kuis' | 'riwayat' = isHistoryRoute ? 'riwayat' : 'kuis'
 
-  const { history, statistics, saveResult, deleteResult, clearHistory } = useQuizHistory()
-  const { user } = useAuth()
-
-  // Quiz state
-  const [selectedCategory, setSelectedCategory] = useState<string>('Semua Topik')
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  // Ambil jawaban tersimpan langsung dari localStorage key 'quiz-answers' saat pertama kali dimuat / refresh
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>(() =>
-    getSavedQuizAnswers()
-  )
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const hasSavedRef = useRef(false)
+  const { user, isLoading: authLoading } = useAuth()
+  const userUid = user?.uid || user?.id
+  const { history, statistics, saveResult, deleteResult, clearHistory, setHistory } = useQuizHistory(userUid)
 
   // Categories list
   const categories = [
@@ -55,25 +47,158 @@ export default function QuizPage() {
     'Penalaran Kimia',
   ]
 
+  // Quiz state
+  const [selectedCategory, setSelectedCategory] = useState<string>('Semua Topik')
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
+  const [_draft, setDraft] = useState<any>(null)
+  const [detail, setDetail] = useState<QuizResult | null>(null)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const hasSavedRef = useRef(false)
+  const prevUidRef = useRef<string | undefined>(undefined)
+
   // Filtered questions
   const activeQuestions =
     selectedCategory === 'Semua Topik'
       ? QUIZ_QUESTIONS
       : QUIZ_QUESTIONS.filter((q) => q.category === selectedCategory)
 
+  // Helper untuk mencari draf tersimpan di localStorage
+  const findExistingDraft = (uid: string | null | undefined, cat?: string) => {
+    if (!uid) return null
+    // Coba ambil draf dengan kategori yang spesifik
+    const targetCat = cat || selectedCategory
+    const quizId = targetCat.toLowerCase().replace(/\s+/g, '-')
+    let d = getQuizDraft(uid, targetCat, quizId, 'v1')
+    if (d) return d
+
+    // Jika tidak ditemukan, coba cari draf kategori lain untuk user ini
+    for (const c of categories) {
+      const qId = c.toLowerCase().replace(/\s+/g, '-')
+      d = getQuizDraft(uid, c, qId, 'v1')
+      if (d && Object.keys(d.answers || {}).length > 0) {
+        return d
+      }
+    }
+
+    // Default 'all'
+    return getQuizDraft(uid, 'all', 'default', 'v1')
+  }
+
+  // 1 & 2 & 3 & 4 & 5: Load draf / riwayat dengan dependensi user?.uid dan proteksi authLoading + flag cancelled
+  useEffect(() => {
+    // 6. Jangan baca localStorage sebelum authLoading === false.
+    if (authLoading) return
+
+    let cancelled = false
+    const currentUid = userUid
+    const previousUid = prevUidRef.current
+
+    // 5. Di QuizPage.tsx: saat user berubah / logout, setDraft(null), setHistory([]), setDetail(null) SEBELUM load data baru.
+    setDraft(null)
+    setHistory([])
+    setDetail(null)
+
+    // 4. Saat logout (sebelumnya ada user, sekarang tidak ada user)
+    if (previousUid && !currentUid) {
+      clearUserState(previousUid)
+      setSelectedAnswers({})
+      setSelectedCategory('Semua Topik')
+      setCurrentQuestionIndex(0)
+      setIsSubmitted(false)
+      hasSavedRef.current = false
+      prevUidRef.current = undefined
+      return
+    }
+
+    // 5. Saat tamu login, periksa apakah ada draf milik tamu ('guest')
+    if (!previousUid && currentUid) {
+      const guestDraft = findExistingDraft('guest')
+      if (guestDraft && Object.keys(guestDraft.answers || {}).length > 0) {
+        const confirmMigrate = window.confirm('Pindahkan draf tamu?')
+        if (confirmMigrate) {
+          // Pindahkan draf ke user sekarang
+          saveQuizDraft(currentUid, {
+            quizId: guestDraft.quizId,
+            category: guestDraft.category,
+            questionsVersion: guestDraft.questionsVersion || 'v1',
+            answers: guestDraft.answers,
+          })
+        }
+        // Hapus draf tamu agar tidak ditanyakan lagi
+        clearQuizDraft('guest', guestDraft.category, guestDraft.quizId, guestDraft.questionsVersion || 'v1')
+        clearQuizDraft('guest', 'all', 'default', 'v1')
+      }
+    }
+
+    prevUidRef.current = currentUid
+
+    // Muat draf untuk akun saat ini (atau guest jika belum login)
+    const activeDraft = findExistingDraft(currentUid)
+
+    if (cancelled) return
+
+    if (activeDraft && activeDraft.answers) {
+      setDraft(activeDraft)
+      // 3. Pulihkan category + answers dari draf, jangan reset ke "Semua" saat refresh
+      if (activeDraft.category && categories.includes(activeDraft.category)) {
+        setSelectedCategory(activeDraft.category)
+      }
+
+      // Hitung pertanyaan untuk kategori yang dipulihkan
+      const targetQuestions =
+        activeDraft.category && activeDraft.category !== 'Semua Topik'
+          ? QUIZ_QUESTIONS.filter((q) => q.category === activeDraft.category)
+          : QUIZ_QUESTIONS
+
+      // Konversi draf Record<questionId, answer> ke index-based Record<number, number>
+      const restoredAnswers: Record<number, number> = {}
+      targetQuestions.forEach((q, idx) => {
+        if (activeDraft.answers[q.id] !== undefined) {
+          restoredAnswers[idx] = activeDraft.answers[q.id]
+        }
+      })
+
+      if (!cancelled) {
+        setSelectedAnswers(restoredAnswers)
+      }
+    } else {
+      if (!cancelled) {
+        setSelectedAnswers({})
+      }
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [userUid, authLoading])
+
   const currentQuestion = activeQuestions[currentQuestionIndex] || activeQuestions[0]
   const totalQuestions = activeQuestions.length
 
   const handleSelectOption = (optionIndex: number) => {
     if (!isSubmitted) {
-      setSelectedAnswers((prev) => {
-        const nextAnswers = {
-          ...prev,
-          [currentQuestionIndex]: optionIndex,
+      const nextAnswers = {
+        ...selectedAnswers,
+        [currentQuestionIndex]: optionIndex,
+      }
+      setSelectedAnswers(nextAnswers)
+
+      // Simpan draf sebagai Record<questionId, answer>
+      const answersRecord: Record<string, any> = {}
+      activeQuestions.forEach((q, idx) => {
+        if (nextAnswers[idx] !== undefined) {
+          answersRecord[q.id] = nextAnswers[idx]
         }
-        // Simpan langsung ke localStorage dengan key quiz-answers setiap kali user memilih jawaban
-        saveQuizAnswers(nextAnswers)
-        return nextAnswers
+      })
+
+      const targetUid = userUid || 'guest'
+      const quizId = selectedCategory.toLowerCase().replace(/\s+/g, '-')
+      saveQuizDraft(targetUid, {
+        quizId,
+        category: selectedCategory,
+        questionsVersion: 'v1',
+        answers: answersRecord,
       })
     }
   }
@@ -124,6 +249,11 @@ export default function QuizPage() {
 
     saveResult(newResult)
 
+    // Hapus draf setelah berhasil submit
+    const targetUid = userUid || 'guest'
+    const quizId = selectedCategory.toLowerCase().replace(/\s+/g, '-')
+    clearQuizDraft(targetUid, selectedCategory, quizId, 'v1')
+
     if (user) {
       saveQuizSubmission({
         ...newResult,
@@ -136,7 +266,11 @@ export default function QuizPage() {
 
   // Hapus jawaban dari localStorage dan reset status kuis
   const handleResetQuiz = () => {
-    clearSavedQuizAnswers()
+    const targetUid = userUid || 'guest'
+    const quizId = selectedCategory.toLowerCase().replace(/\s+/g, '-')
+    clearQuizDraft(targetUid, selectedCategory, quizId, 'v1')
+    clearQuizDraft(targetUid, 'all', 'default', 'v1')
+
     setSelectedAnswers({})
     setIsSubmitted(false)
     setCurrentQuestionIndex(0)
@@ -475,6 +609,8 @@ export default function QuizPage() {
           onDeleteAttempt={deleteResult}
           onClearAll={clearHistory}
           onStartNewQuiz={() => switchTab('kuis')}
+          selectedResult={detail}
+          onSelectResult={setDetail}
         />
       )}
     </div>

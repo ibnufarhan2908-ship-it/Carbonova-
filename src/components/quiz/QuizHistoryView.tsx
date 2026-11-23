@@ -19,6 +19,8 @@ interface QuizHistoryViewProps {
   onDeleteAttempt: (id: string) => void
   onClearAll: () => void
   onStartNewQuiz: () => void
+  selectedResult?: QuizResult | null
+  onSelectResult?: (result: QuizResult | null) => void
 }
 
 export default function QuizHistoryView({
@@ -27,10 +29,21 @@ export default function QuizHistoryView({
   onDeleteAttempt,
   onClearAll,
   onStartNewQuiz,
+  selectedResult: propSelectedResult,
+  onSelectResult,
 }: QuizHistoryViewProps) {
-  const [selectedResult, setSelectedResult] = useState<QuizResult | null>(null)
+  const [internalSelectedResult, setInternalSelectedResult] = useState<QuizResult | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [attemptToDelete, setAttemptToDelete] = useState<string | null>(null)
+
+  const activeResult = onSelectResult ? propSelectedResult ?? null : internalSelectedResult
+  const setActiveResult = (res: QuizResult | null) => {
+    if (onSelectResult) {
+      onSelectResult(res)
+    } else {
+      setInternalSelectedResult(res)
+    }
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in">
@@ -189,7 +202,7 @@ export default function QuizHistoryView({
                     </div>
 
                     <button
-                      onClick={() => setSelectedResult(attempt)}
+                      onClick={() => setActiveResult(attempt)}
                       className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition-colors shadow-2xs"
                     >
                       <Eye className="w-3.5 h-3.5 text-teal-600" />
@@ -290,8 +303,8 @@ export default function QuizHistoryView({
 
       {/* Detail Modal */}
       <QuizResultDetailModal
-        result={selectedResult}
-        onClose={() => setSelectedResult(null)}
+        result={activeResult}
+        onClose={() => setActiveResult(null)}
       />
     </div>
   )

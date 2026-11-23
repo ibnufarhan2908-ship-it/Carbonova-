@@ -1,81 +1,151 @@
 import type { QuizResult, QuizStatistics } from '../types/quiz'
 
-const STORAGE_KEY = 'carbonova_quiz_history_v1'
-export const QUIZ_ANSWERS_KEY = 'quiz-answers'
+export interface QuizDraft {
+  userId: string
+  quizId: string
+  category: string
+  questionsVersion: string
+  answers: Record<string, any>
+  updatedAt: string
+  version: 2
+}
+
+export interface StoredQuizResult extends QuizResult {
+  userId?: string
+}
 
 /**
- * Mendapatkan jawaban kuis aktif yang tersimpan dari localStorage
+ * Format key draf jawaban:
+ * Jika uid bernilai falsy atau 'guest': `carbonova:draft:guest:{category}:{quizId}:{questionsVersion}`
+ * User terautentikasi: `carbonova:draft:${uid}:{category}:{quizId}:{questionsVersion}`
  */
-export function getSavedQuizAnswers(): Record<number, number> {
-  if (typeof window === 'undefined') return {}
+export function getDraftStorageKey(
+  uid?: string | null,
+  category = 'all',
+  quizId = 'default',
+  questionsVersion = 'v1'
+): string {
+  const cleanCategory = category.trim() || 'all'
+  const cleanQuizId = quizId.trim() || 'default'
+  const cleanVersion = questionsVersion.trim() || 'v1'
+
+  if (!uid || uid === 'guest') {
+    return `carbonova:draft:guest:${cleanCategory}:${cleanQuizId}:${cleanVersion}`
+  }
+  return `carbonova:draft:${uid}:${cleanCategory}:${cleanQuizId}:${cleanVersion}`
+}
+
+/**
+ * Format key riwayat kuis pengguna: `carbonova:history:{uid}`
+ */
+export function getHistoryStorageKey(uid?: string | null): string {
+  if (!uid || uid === 'guest') {
+    return 'carbonova:history:guest'
+  }
+  return `carbonova:history:${uid}`
+}
+
+/**
+ * Menyimpan draf jawaban kuis (versi 2).
+ * Answers disimpan sebagai Record<questionId, answer>.
+ */
+export function saveQuizDraft(
+  uid: string | null | undefined,
+  params: {
+    quizId: string
+    category: string
+    questionsVersion?: string
+    answers: Record<string, any>
+  }
+): void {
+  if (typeof window === 'undefined') return
   try {
-    const rawData = localStorage.getItem(QUIZ_ANSWERS_KEY)
-    if (!rawData) return {}
-    const parsed = JSON.parse(rawData)
-    if (Array.isArray(parsed)) {
-      const result: Record<number, number> = {}
-      parsed.forEach((val, idx) => {
-        if (typeof val === 'number') result[idx] = val
-      })
-      return result
+    const qVersion = params.questionsVersion || 'v1'
+    const key = getDraftStorageKey(uid, params.category, params.quizId, qVersion)
+    const draftData: QuizDraft = {
+      userId: uid && uid !== 'guest' ? uid : 'guest',
+      quizId: params.quizId,
+      category: params.category,
+      questionsVersion: qVersion,
+      answers: params.answers,
+      updatedAt: new Date().toISOString(),
+      version: 2,
     }
+    localStorage.setItem(key, JSON.stringify(draftData))
+  } catch (error) {
+    console.error('Gagal menyimpan draf kuis ke localStorage:', error)
+  }
+}
+
+/**
+ * Mengambil draf jawaban kuis.
+ */
+export function getQuizDraft(
+  uid: string | null | undefined,
+  category = 'all',
+  quizId = 'default',
+  questionsVersion = 'v1'
+): QuizDraft | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const key = getDraftStorageKey(uid, category, quizId, questionsVersion)
+    const rawData = localStorage.getItem(key)
+    if (!rawData) return null
+    const parsed = JSON.parse(rawData)
     if (parsed && typeof parsed === 'object') {
-      const result: Record<number, number> = {}
-      for (const [key, val] of Object.entries(parsed)) {
-        const numKey = Number(key)
-        if (!isNaN(numKey) && typeof val === 'number') {
-          result[numKey] = val
-        }
+      return parsed as QuizDraft
+    }
+  } catch (error) {
+    console.error('Gagal membaca draf kuis dari localStorage:', error)
+  }
+  return null
+}
+
+/**
+ * Menghapus draf jawaban kuis.
+ */
+export function clearQuizDraft(
+  uid: string | null | undefined,
+  category = 'all',
+  quizId = 'default',
+  questionsVersion = 'v1'
+): void {
+  if (typeof window === 'undefined') return
+  try {
+    const key = getDraftStorageKey(uid, category, quizId, questionsVersion)
+    localStorage.removeItem(key)
+  } catch (error) {
+    console.error('Gagal menghapus draf kuis dari localStorage:', error)
+  }
+}
+
+/**
+ * Mendapatkan seluruh riwayat kuis dari localStorage.
+ * HARUS return [] jika uid kosong, dan HARUS filter item.userId === uid.
+ */
+export function getQuizHistory(uid?: string | null): StoredQuizResult[] {
+  if (typeof window === 'undefined' || !uid) return []
+  try {
+    const rawData = localStorage.getItem(getHistoryStorageKey(uid))
+    let parsed: any[] = []
+
+    if (rawData) {
+      try {
+        const items = JSON.parse(rawData)
+        if (Array.isArray(items)) parsed = items
+      } catch (e) {
+        console.error('Gagal parse user history:', e)
       }
-      return result
     }
-  } catch (error) {
-    console.error('Gagal membaca jawaban kuis dari localStorage:', error)
-  }
-  return {}
-}
 
-/**
- * Menyimpan jawaban kuis aktif langsung ke localStorage
- */
-export function saveQuizAnswers(answers: Record<number, number>): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(QUIZ_ANSWERS_KEY, JSON.stringify(answers))
-  } catch (error) {
-    console.error('Gagal menyimpan jawaban kuis ke localStorage:', error)
-  }
-}
-
-/**
- * Menghapus jawaban kuis aktif dari localStorage
- */
-export function clearSavedQuizAnswers(): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.removeItem(QUIZ_ANSWERS_KEY)
-  } catch (error) {
-    console.error('Gagal menghapus jawaban kuis dari localStorage:', error)
-  }
-}
-
-/**
- * Mendapatkan seluruh riwayat kuis dari localStorage
- * Diurutkan berdasarkan tanggal terbaru (descending)
- */
-export function getQuizHistory(): QuizResult[] {
-  try {
-    const rawData = localStorage.getItem(STORAGE_KEY)
-    if (!rawData) {
-      return []
-    }
-    const parsed = JSON.parse(rawData)
     if (!Array.isArray(parsed)) {
-      console.warn('Format data riwayat kuis di localStorage tidak valid, mereset...')
       return []
     }
-    // Urutkan attempt terbaru di urutan pertama
-    return parsed.sort(
+
+    // Wajib filter item.userId === uid
+    const filtered = parsed.filter((item) => (item as StoredQuizResult).userId === uid)
+
+    return (filtered as StoredQuizResult[]).sort(
       (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
     )
   } catch (error) {
@@ -85,22 +155,58 @@ export function getQuizHistory(): QuizResult[] {
 }
 
 /**
- * Menyimpan hasil kuis baru ke localStorage
- * Menjamin attempt lama tidak tertimpa dan ID unik tercipta
+ * Mengambil satu attempt kuis dengan validasi kepemilikan.
+ * HARUS return null jika attempt.userId !== uid.
  */
-export function saveQuizResult(result: QuizResult): QuizResult {
+export function getQuizAttempt(uid: string, attemptId: string): StoredQuizResult | null {
+  if (!uid || !attemptId || typeof window === 'undefined') return null
   try {
-    const currentHistory = getQuizHistory()
-    
-    // Cek apakah ID pengerjaan ini sudah pernah disimpan (mencegah duplikasi akibat re-render)
-    const existingIndex = currentHistory.findIndex((item) => item.id === result.id)
-    if (existingIndex !== -1) {
-      return currentHistory[existingIndex]
+    const history = getQuizHistory(uid)
+    const attempt = history.find((item) => item.id === attemptId)
+    if (!attempt) return null
+    if (attempt.userId !== uid) {
+      return null
+    }
+    return attempt
+  } catch (error) {
+    console.error('Gagal membaca attempt kuis:', error)
+    return null
+  }
+}
+
+/**
+ * Menyimpan hasil kuis baru ke localStorage dengan userId dan key terisolasi.
+ */
+export function saveQuizResult(result: QuizResult, uid?: string | null): StoredQuizResult {
+  if (typeof window === 'undefined') return result
+  try {
+    const itemUserId = uid || (result as StoredQuizResult).userId
+    const resultToSave: StoredQuizResult = {
+      ...result,
+      userId: itemUserId,
     }
 
-    const updatedHistory = [result, ...currentHistory]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedHistory))
-    return result
+    if (itemUserId) {
+      const userKey = getHistoryStorageKey(itemUserId)
+      const userRaw = localStorage.getItem(userKey)
+      let userHistory: StoredQuizResult[] = []
+      if (userRaw) {
+        try {
+          const parsed = JSON.parse(userRaw)
+          if (Array.isArray(parsed)) userHistory = parsed
+        } catch {
+          userHistory = []
+        }
+      }
+
+      const existingIndex = userHistory.findIndex((item) => item.id === resultToSave.id)
+      if (existingIndex === -1) {
+        userHistory = [resultToSave, ...userHistory]
+        localStorage.setItem(userKey, JSON.stringify(userHistory))
+      }
+    }
+
+    return resultToSave
   } catch (error) {
     console.error('Gagal menyimpan hasil kuis ke localStorage:', error)
     return result
@@ -110,19 +216,25 @@ export function saveQuizResult(result: QuizResult): QuizResult {
 /**
  * Mendapatkan satu hasil pengerjaan kuis berdasarkan ID pengerjaan
  */
-export function getQuizResultById(id: string): QuizResult | undefined {
-  const history = getQuizHistory()
+export function getQuizResultById(id: string, uid?: string | null): StoredQuizResult | undefined {
+  if (!uid) return undefined
+  const history = getQuizHistory(uid)
   return history.find((item) => item.id === id)
 }
 
 /**
  * Menghapus satu entri riwayat kuis berdasarkan ID
  */
-export function deleteQuizResult(id: string): boolean {
+export function deleteQuizResult(id: string, uid?: string | null): boolean {
+  if (typeof window === 'undefined' || !uid) return false
   try {
-    const currentHistory = getQuizHistory()
-    const updatedHistory = currentHistory.filter((item) => item.id !== id)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedHistory))
+    const userKey = getHistoryStorageKey(uid)
+    const userRaw = localStorage.getItem(userKey)
+    if (userRaw) {
+      const parsed: StoredQuizResult[] = JSON.parse(userRaw)
+      const updated = parsed.filter((item) => item.id !== id)
+      localStorage.setItem(userKey, JSON.stringify(updated))
+    }
     return true
   } catch (error) {
     console.error('Gagal menghapus riwayat kuis:', error)
@@ -133,9 +245,10 @@ export function deleteQuizResult(id: string): boolean {
 /**
  * Menghapus seluruh riwayat pengerjaan kuis
  */
-export function clearQuizHistory(): boolean {
+export function clearQuizHistory(uid?: string | null): boolean {
+  if (typeof window === 'undefined' || !uid) return false
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(getHistoryStorageKey(uid))
     return true
   } catch (error) {
     console.error('Gagal mengosongkan riwayat kuis:', error)
@@ -144,10 +257,50 @@ export function clearQuizHistory(): boolean {
 }
 
 /**
- * Menghitung metrik statistik dari seluruh data kuis yang tersimpan
+ * Menghapus seluruh state user tertentu (draf & history) saat logout.
+ * Jika uid tidak disertakan atau bernilai 'guest', hanya menghapus state guest.
  */
-export function getQuizStatistics(): QuizStatistics {
-  const history = getQuizHistory()
+export function clearUserState(uid?: string | null): void {
+  if (typeof window === 'undefined') return
+  try {
+    const targetUid = uid && uid !== 'guest' ? uid : 'guest'
+    const draftPrefix = targetUid === 'guest'
+      ? 'carbonova:draft:guest:'
+      : `carbonova:draft:${targetUid}:`
+    const historyKey = getHistoryStorageKey(targetUid)
+
+    localStorage.removeItem(historyKey)
+
+    // Cari dan hapus semua key draf milik user ini
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith(draftPrefix)) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key))
+  } catch (error) {
+    console.error('Gagal membersihkan state user dari localStorage:', error)
+  }
+}
+
+/**
+ * Menghitung metrik statistik dari data kuis yang tersimpan
+ */
+export function getQuizStatistics(uid?: string | null): QuizStatistics {
+  if (!uid) {
+    return {
+      totalQuizzesCompleted: 0,
+      averageScore: 0,
+      highestScore: 0,
+      lowestScore: 0,
+      latestQuizTitle: null,
+      latestQuizDate: null,
+    }
+  }
+
+  const history = getQuizHistory(uid)
 
   if (history.length === 0) {
     return {

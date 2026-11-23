@@ -2,6 +2,7 @@ export type UserRole = 'teacher' | 'student' | 'guru' | 'siswa'
 
 export interface User {
   id: string
+  uid?: string
   name: string
   email: string
   role: UserRole
