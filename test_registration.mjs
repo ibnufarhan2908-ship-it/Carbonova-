@@ -100,15 +100,15 @@ async function runRegistrationTests() {
   assert(resDuplicate.success === false, 'Email yang sudah terdaftar ditolak untuk registrasi ulang')
   assert(resDuplicate.error?.includes('sudah terdaftar'), 'Pesan kesalahan email sudah terdaftar ditampilkan')
 
-  // Coba duplikat email akun demo
-  const resDuplicateDemo = await register({
-    name: 'Siswa Demo Tiruan',
-    email: 'siswa.demo@carbonova.test',
+  // Coba duplikat email akun guru resmi
+  const resDuplicateTeacher = await register({
+    name: 'Guru Tiruan',
+    email: 'guru@carbonova.com',
     password: 'PasswordBaru123!',
     confirmPassword: 'PasswordBaru123!',
     role: 'student'
   })
-  assert(resDuplicateDemo.success === false, 'Email akun demo (siswa.demo@carbonova.test) dilindungi dari duplikasi')
+  assert(resDuplicateTeacher.success === false, 'Email akun guru resmi (guru@carbonova.com) dilindungi dari duplikasi')
 
   // --- 5. PENGUJIAN KECOCOKAN & KEKUATAN PASSWORD ---
   console.log('\n--- 5. Pengujian Validasi Keamanan Password ---')
@@ -159,19 +159,24 @@ async function runRegistrationTests() {
   assert(loginTeacher.user?.email === 'ratna.dewi@sekolah.sch.id', 'Email sesi login cocok dengan pendaftar')
   assert(loginTeacher.user?.role === 'student', 'Role sesi login akun pendaftar umum tetap "student" (bukan teacher)')
 
-  // --- 7. PENGUJIAN KEDUA AKUN DEMO TETAP AKTIF ---
-  console.log('\n--- 7. Pengujian Kompatibilitas Akun Demo Tetap Dapat Digunakan ---')
+  // --- 7. PENGUJIAN PENGHAPUSAN AKUN DEMO & LOGIN GURU RESMI TUNGGAL ---
+  console.log('\n--- 7. Pengujian Penghapusan Akun Demo & Login Guru Resmi Tunggal ---')
   logout()
 
+  const { getTrustedTeacherEmail } = await import('./src/config/authConfig.ts')
+  const teacherEmail = getTrustedTeacherEmail()
+  const teacherLogin = await login(teacherEmail, 'GuruCarbonova2026!')
+  assert(teacherLogin.success === true, `Akun guru resmi (${teacherEmail}) berhasil login`)
+  assert(teacherLogin.user?.role === 'teacher', 'Role akun guru resmi adalah "teacher"')
+
+  logout()
+
+  // Verifikasi login akun demo lama ditolak karena telah dibersihkan
   const demoTeacherLogin = await login('guru.demo@carbonova.test', 'GuruDemo123!')
-  assert(demoTeacherLogin.success === true, 'Akun demo guru (guru.demo@carbonova.test) tetap berhasil login')
-  assert(demoTeacherLogin.user?.role === 'teacher', 'Role akun demo guru tetap "teacher"')
-
-  logout()
+  assert(demoTeacherLogin.success === false, 'Akun demo guru (guru.demo@carbonova.test) ditolak login (telah dibersihkan)')
 
   const demoStudentLogin = await login('siswa.demo@carbonova.test', 'SiswaDemo123!')
-  assert(demoStudentLogin.success === true, 'Akun demo siswa (siswa.demo@carbonova.test) tetap berhasil login')
-  assert(demoStudentLogin.user?.role === 'student', 'Role akun demo siswa tetap "student"')
+  assert(demoStudentLogin.success === false, 'Akun demo siswa (siswa.demo@carbonova.test) ditolak login (telah dibersihkan)')
 
   // --- 8. PENGUJIAN INTEGRASI DATABASE GURU MELIHAT SISWA BARU ---
   console.log('\n--- 8. Pengujian Integrasi Guru Melihat Siswa Baru di LMS ---')

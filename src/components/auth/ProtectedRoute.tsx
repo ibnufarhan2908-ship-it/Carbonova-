@@ -27,7 +27,13 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
   if (!isAuthenticated || !user) {
     // Arahkan ke login dan simpan URL asal untuk redirect kembali setelah login
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />
+    const isQuizRoute =
+      location.pathname.startsWith('/latihan') || location.pathname.startsWith('/riwayat')
+    const loginMessage = isQuizRoute
+      ? 'Silakan masuk (login) terlebih dahulu menggunakan akun siswa untuk mengerjakan dan mengirimkan jawaban latihan soal.'
+      : undefined
+
+    return <Navigate to="/login" state={{ from: location.pathname, message: loginMessage }} replace />
   }
 
   // Hak Akses AD11-01: Verifikasi ketat role teacher berdasarkan whitelist tepercaya

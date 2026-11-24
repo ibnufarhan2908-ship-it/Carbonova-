@@ -11,19 +11,22 @@ import {
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, isFirebaseConfigured } from './firebase.ts'
 import type { User, UserRole } from '../types/auth.ts'
-import { isTeacherAccount, isTeacherDemoAccount, resolveTeacherRole } from '../config/authConfig.ts'
+import { isTeacherAccount, resolveTeacherRole } from '../config/authConfig.ts'
 
 /**
  * Mengonversi FirebaseUser + data profil Firestore menjadi model User aplikasi
  */
 export async function getOrCreateUserProfile(
   fbUser: FirebaseUser,
-  defaultRole: UserRole = 'student'
+  _defaultRole: UserRole = 'student'
 ): Promise<User> {
   const now = new Date().toISOString()
-  // Hak Akses AD11-01: Verifikasi akun guru tepercaya / demo
+  // Hak Akses AD11-01: Verifikasi akun guru tepercaya
   const isTeacher = isTeacherAccount(fbUser.email, fbUser.uid)
+<<<<<<< HEAD
   const isDemoTeacher = isTeacherDemoAccount(fbUser.email, fbUser.uid)
+=======
+>>>>>>> 0371e8544c92c247cbe218dbb4a16496d49b74eb
   const resolvedRole = isTeacher ? resolveTeacherRole(fbUser.email, fbUser.uid) : 'student'
   const fallbackRole: UserRole = isTeacher ? resolvedRole : 'student'
 
@@ -57,13 +60,7 @@ export async function getOrCreateUserProfile(
       }
 
       let parsedRole: UserRole = 'student'
-      // Otorisasi Guru:
-      // 1. Akun Guru Demo default selalu mendapatkan 'teacher_demo'
-      // 2. Akun dengan data.role === 'teacher' / 'guru' di Firestore diverifikasi: jika terotorisasi admin/whitelist -> 'teacher', jika demo -> 'teacher_demo'
-      // 3. Akun dengan data.role === 'teacher_demo' -> 'teacher_demo'
-      if (isTeacherDemoAccount(data.email || fbUser.email, fbUser.uid) || data.role === 'teacher_demo') {
-        parsedRole = 'teacher_demo'
-      } else if (data.role === 'guru' || data.role === 'teacher') {
+      if (data.role === 'guru' || data.role === 'teacher') {
         parsedRole = isTeacherAccount(data.email || fbUser.email, fbUser.uid) ? 'teacher' : 'student'
       }
 
@@ -93,6 +90,7 @@ export async function getOrCreateUserProfile(
       lastLoginAt: now,
     }
 
+<<<<<<< HEAD
       try {
         await setDoc(userDocRef, {
           name: newProfile.name,
@@ -102,6 +100,17 @@ export async function getOrCreateUserProfile(
           createdAt: serverTimestamp(),
         });
       } catch (err) {
+=======
+    try {
+      await setDoc(userDocRef, {
+        name: newProfile.name,
+        email: newProfile.email,
+        role: newProfile.role,
+        kelas: '-',
+        createdAt: serverTimestamp(),
+      })
+    } catch (err) {
+>>>>>>> 0371e8544c92c247cbe218dbb4a16496d49b74eb
       console.warn('Gagal menyimpan profil baru ke Firestore (periksa Firestore Security Rules):', err)
     }
 
@@ -227,7 +236,7 @@ export async function firebaseSignUp(
   name: string,
   email: string,
   pass: string,
-  role: UserRole = 'student',
+  _role: UserRole = 'student',
   kelas: string = '-'
 ): Promise<{ success: boolean; user?: User; error?: string }> {
   if (!auth || !isFirebaseConfigured) {

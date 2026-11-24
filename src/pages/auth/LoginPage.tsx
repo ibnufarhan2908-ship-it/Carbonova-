@@ -72,6 +72,10 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
+  // Notifikasi dari pengalihan akses fitur terkunci (misal: Latihan Soal / Riwayat Kuis)
+  const stateNotice = (location.state as { message?: string })?.message
+  const [authNotice] = useState<string | null>(stateNotice || null)
+
   const validateForm = (): boolean => {
     const errors: {
       name?: string
@@ -289,6 +293,17 @@ export default function LoginPage() {
                   {mode === 'login' ? 'Autentikasi Gagal' : 'Pendaftaran Gagal'}
                 </p>
                 <p className="text-xs text-rose-700 mt-0.5">{authError}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Banner Peringatan: Akses Fitur Terkunci (Latihan Soal / Riwayat) */}
+          {authNotice && (
+            <div className="mb-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 shadow-2xs animate-in fade-in duration-200">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-amber-900">Akses Masuk Diperlukan</p>
+                <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">{authNotice}</p>
               </div>
             </div>
           )}

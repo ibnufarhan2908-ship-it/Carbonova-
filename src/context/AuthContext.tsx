@@ -116,20 +116,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { success: true }
         }
 
-        // Khusus akun demo resmi Carbonova:
-        // Jika belum terdaftar di Firebase Authentication, otomatis daftarkan ke Firebase agar tersimpan di console!
-        if (cleanEmail.includes('.demo@carbonova.test')) {
-          const isTeacher = isTeacherAccount(cleanEmail)
-          const demoName = isTeacher ? 'Guru Demo' : 'Siswa Demo'
-          const demoRole: UserRole = isTeacher ? 'teacher' : 'student'
-
-          const signUpRes = await firebaseSignUp(demoName, cleanEmail, pass, demoRole)
-          if (signUpRes.success && signUpRes.user) {
-            setUser(signUpRes.user)
-            return { success: true }
-          }
-        }
-
         // Fallback ke penyimpanan lokal jika akun terdaftar di lokal / offline
         const localRes = await authLogin(cleanEmail, pass)
         if (localRes.success && localRes.user) {
