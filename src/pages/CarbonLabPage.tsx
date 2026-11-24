@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   FlaskConical,
@@ -124,12 +124,74 @@ export default function CarbonLabPage() {
   const [combustionFuel, setCombustionFuel] = useState<'metana' | 'propana' | 'butana'>('metana')
   const [isComplete, setIsComplete] = useState<boolean>(true)
 
-  const combustionData = {
+  const combustionData: Record<
+    'metana' | 'propana' | 'butana',
+    {
+      name: string
+      formula: string
+      completeEq: string
+      incompleteEq: string
+      completeEqDisplay: ReactNode
+      incompleteEqDisplay: ReactNode
+      atomsComplete: {
+        reaktan: { C: number; H: number; O: number }
+        produk: { C: number; H: number; O: number }
+      }
+      atomsIncomplete: {
+        reaktan: { C: number; H: number; O: number }
+        produk: { C: number; H: number; O: number }
+      }
+      notes: string
+    }
+  > = {
     metana: {
       name: 'Metana (CH₄)',
       formula: 'CH₄',
-      completeEq: 'CH₄(g) + 2 O₂(g) → CO₂(g) + 2 H₂O(g) + 890 kJ',
-      incompleteEq: '4 CH4 + 5 O2 → 2 CO + 2 C + 8 H2O',
+      completeEq: 'CH₄(g) + 2 O₂(g) → CO₂(g) + 2 H₂O(l) + 890 kJ',
+      incompleteEq: '4 CH₄(g) + 5 O₂(g) → 2 CO(g) + 2 C(s) + 8 H₂O(l)',
+      completeEqDisplay: (
+        <span className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+          <span>
+            CH<sub>4</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            2 O<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>→</span>
+          <span>
+            CO<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            2 H<sub>2</sub>O <span className="italic">(l)</span>
+          </span>
+          <span className="text-amber-300 font-normal text-xs sm:text-sm self-center">+ 890 kJ</span>
+        </span>
+      ),
+      incompleteEqDisplay: (
+        <span className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+          <span>
+            4 CH<sub>4</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            5 O<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>→</span>
+          <span>
+            2 CO <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            2 C <span className="italic">(s)</span>
+          </span>
+          <span>+</span>
+          <span>
+            8 H<sub>2</sub>O <span className="italic">(l)</span>
+          </span>
+        </span>
+      ),
       atomsComplete: {
         reaktan: { C: 1, H: 4, O: 4 },
         produk: { C: 1, H: 4, O: 4 },
@@ -144,8 +206,51 @@ export default function CarbonLabPage() {
     propana: {
       name: 'Propana (C₃H₈)',
       formula: 'C₃H₈',
-      completeEq: 'C₃H₈(g) + 5 O₂(g) → 3 CO₂(g) + 4 H₂O(g) + 2220 kJ',
-      incompleteEq: '2 C3H8 + 6 O2 → 4 CO + 2 C + 8 H2O',
+      completeEq: 'C₃H₈(g) + 5 O₂(g) → 3 CO₂(g) + 4 H₂O(l) + 2220 kJ',
+      incompleteEq: '2 C₃H₈(g) + 6 O₂(g) → 4 CO(g) + 2 C(s) + 8 H₂O(l)',
+      completeEqDisplay: (
+        <span className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+          <span>
+            C<sub>3</sub>H<sub>8</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            5 O<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>→</span>
+          <span>
+            3 CO<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            4 H<sub>2</sub>O <span className="italic">(l)</span>
+          </span>
+          <span className="text-amber-300 font-normal text-xs sm:text-sm self-center">+ 2220 kJ</span>
+        </span>
+      ),
+      incompleteEqDisplay: (
+        <span className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+          <span>
+            2 C<sub>3</sub>H<sub>8</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            6 O<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>→</span>
+          <span>
+            4 CO <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            2 C <span className="italic">(s)</span>
+          </span>
+          <span>+</span>
+          <span>
+            8 H<sub>2</sub>O <span className="italic">(l)</span>
+          </span>
+        </span>
+      ),
       atomsComplete: {
         reaktan: { C: 3, H: 8, O: 10 },
         produk: { C: 3, H: 8, O: 10 },
@@ -160,8 +265,51 @@ export default function CarbonLabPage() {
     butana: {
       name: 'Butana (C₄H₁₀)',
       formula: 'C₄H₁₀',
-      completeEq: '2 C₄H₁₀(g) + 13 O₂(g) → 8 CO₂(g) + 10 H₂O(g) + 5750 kJ',
-      incompleteEq: '2 C4H10 + 8 O2 → 6 CO + 2 C + 10 H2O',
+      completeEq: '2 C₄H₁₀(g) + 13 O₂(g) → 8 CO₂(g) + 10 H₂O(l) + 5750 kJ',
+      incompleteEq: '2 C₄H₁₀(g) + 8 O₂(g) → 6 CO(g) + 2 C(s) + 10 H₂O(l)',
+      completeEqDisplay: (
+        <span className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+          <span>
+            2 C<sub>4</sub>H<sub>10</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            13 O<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>→</span>
+          <span>
+            8 CO<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            10 H<sub>2</sub>O <span className="italic">(l)</span>
+          </span>
+          <span className="text-amber-300 font-normal text-xs sm:text-sm self-center">+ 5750 kJ</span>
+        </span>
+      ),
+      incompleteEqDisplay: (
+        <span className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+          <span>
+            2 C<sub>4</sub>H<sub>10</sub> <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            8 O<sub>2</sub> <span className="italic">(g)</span>
+          </span>
+          <span>→</span>
+          <span>
+            6 CO <span className="italic">(g)</span>
+          </span>
+          <span>+</span>
+          <span>
+            2 C <span className="italic">(s)</span>
+          </span>
+          <span>+</span>
+          <span>
+            10 H<sub>2</sub>O <span className="italic">(l)</span>
+          </span>
+        </span>
+      ),
       atomsComplete: {
         reaktan: { C: 8, H: 20, O: 26 },
         produk: { C: 8, H: 20, O: 26 },
@@ -515,10 +663,10 @@ export default function CarbonLabPage() {
             <span className="text-[11px] font-semibold text-slate-400 block font-sans uppercase tracking-wider">
               Persamaan Reaksi Kimia Setara:
             </span>
-            <div className="text-sm sm:text-lg font-bold text-[#5DE0E6] overflow-x-auto py-2">
+            <div className="text-sm sm:text-lg font-bold text-[#5DE0E6] overflow-x-auto py-2 leading-relaxed">
               {isComplete
-                ? combustionData[combustionFuel].completeEq
-                : combustionData[combustionFuel].incompleteEq}
+                ? combustionData[combustionFuel].completeEqDisplay
+                : combustionData[combustionFuel].incompleteEqDisplay}
             </div>
           </div>
 
