@@ -1,6 +1,6 @@
 import type { AuthSession, User, UserRole, RegisterPayload, AuthResponse, StoredUser } from '../types/auth.ts'
 import { verifyPassword, generateSessionToken, generateSalt, hashPassword } from './crypto.ts'
-import { isTeacherAccount } from '../config/authConfig.ts'
+import { isTeacherAccount, resolveTeacherRole } from '../config/authConfig.ts'
 import {
   initDatabase,
   getStoredUserByEmail,
@@ -73,7 +73,7 @@ export async function register(
   let apiSucceeded = false
   if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
     try {
-      const sanitizedRole: UserRole = isTeacherAccount(cleanEmail) ? 'teacher' : 'student'
+      const sanitizedRole: UserRole = isTeacherAccount(cleanEmail) ? resolveTeacherRole(cleanEmail) : 'student'
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,7 +130,7 @@ export async function register(
 
   // 7. Penegakan Hak Akses AD11-01: Pendaftaran umum SELALU mendapatkan role 'student'.
   // Role 'teacher' hanya bisa didapatkan jika email cocok dengan konfigurasi whitelist guru resmi tepercaya.
-  const assignedRole: UserRole = isTeacherAccount(cleanEmail) ? 'teacher' : 'student'
+  const assignedRole: UserRole = isTeacherAccount(cleanEmail) ? resolveTeacherRole(cleanEmail) : 'student'
 
   // 8. Hashing Kata Sandi Menggunakan PBKDF2 & Salt Kriptografis Unik
   const salt = generateSalt()

@@ -612,6 +612,10 @@ export default function LoginPage() {
           <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-[#1DAA9A]" />
             <span>Autentikasi terenkripsi & Cloud Firestore</span>
+          {/* Catatan Keamanan */}
+          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#1DAA9A]" />
+            <span>Autentikasi terenkripsi & Cloud Firestore</span>
           </div>
         </div>
       </div>
