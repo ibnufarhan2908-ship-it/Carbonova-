@@ -77,11 +77,11 @@ export default function StudentDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FB]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-[#F5F7FB]">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-w-0">
         {/* Header Profile Siswa */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-6 min-w-0">
+          <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-cyan-800 border border-cyan-200/60 inline-flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
@@ -101,13 +101,13 @@ export default function StudentDashboardPage() {
           </div>
 
           {/* Quick Profile & Logout */}
-          <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 pr-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#101C3A] to-[#1DAA9A] text-white flex items-center justify-center font-bold text-sm shadow-xs">
+          <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 min-w-0">
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 pr-4 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#101C3A] to-[#1DAA9A] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
                 {user?.name ? user.name.substring(0, 2).toUpperCase() : 'SD'}
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-slate-800 leading-tight">
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-slate-800 leading-tight truncate">
                   {user?.name || 'Siswa Demo'}
                 </span>
                 <span className="text-[11px] text-slate-500 truncate max-w-[150px]">
@@ -118,7 +118,7 @@ export default function StudentDashboardPage() {
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition-colors cursor-pointer shrink-0"
               title="Keluar dari sesi siswa"
             >
               <LogOut className="w-4 h-4" />
@@ -128,8 +128,8 @@ export default function StudentDashboardPage() {
         </div>
 
         {/* Navigasi Utama Siswa Sesuai Kriteria 6 */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
             <span className="px-4 py-2.5 rounded-2xl bg-[#101C3A] text-white text-xs sm:text-sm font-bold shadow-sm">
               Dashboard Siswa
             </span>
@@ -137,28 +137,28 @@ export default function StudentDashboardPage() {
               to="/materi"
               className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all"
             >
-              <BookOpen className="w-4 h-4 text-teal-600" />
+              <BookOpen className="w-4 h-4 text-teal-600 shrink-0" />
               <span>Materi Pembelajaran</span>
             </Link>
             <Link
               to="/latihan"
               className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all"
             >
-              <GraduationCap className="w-4 h-4 text-teal-600" />
+              <GraduationCap className="w-4 h-4 text-teal-600 shrink-0" />
               <span>Latihan Soal</span>
             </Link>
             <Link
               to="/riwayat"
               className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all"
             >
-              <History className="w-4 h-4 text-teal-600" />
+              <History className="w-4 h-4 text-teal-600 shrink-0" />
               <span>Riwayat Pengerjaan</span>
             </Link>
           </div>
         </div>
 
         {/* 5 Metrik Ringkasan Siswa Sesuai Kriteria 6 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 min-w-0">
           {/* 1. Jumlah Materi yang Tersedia */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs">
             <div className="flex items-center justify-between mb-3">
@@ -251,7 +251,7 @@ export default function StudentDashboardPage() {
         </div>
 
         {/* Section Aksi Cepat Belajar */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-w-0">
           <div className="bg-gradient-to-br from-[#101C3A] to-[#1a2d59] rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden flex flex-col justify-between">
             <div className="space-y-3 relative z-10">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/20 text-[#5DE0E6] text-xs font-bold">

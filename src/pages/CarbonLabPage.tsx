@@ -237,8 +237,8 @@ export default function CarbonLabPage() {
 
       {/* TAB 1: MOLECULAR BUILDER */}
       {activeTab === 'builder' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-sm animate-in fade-in">
-          <div className="lg:col-span-6 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-sm animate-in fade-in min-w-0">
+          <div className="lg:col-span-6 space-y-6 min-w-0">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-[#1DAA9A]">
                 Eksperimen 1 — Model Valensi
@@ -390,12 +390,12 @@ export default function CarbonLabPage() {
           </div>
 
           {/* Result Evaluation Panel */}
-          <div className="lg:col-span-6 p-6 rounded-3xl bg-slate-50 border border-slate-200 space-y-5">
+          <div className="lg:col-span-6 p-6 rounded-3xl bg-slate-50 border border-slate-200 space-y-5 min-w-0 w-full">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
               Hasil Evaluasi Valensi
             </span>
 
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 min-w-0">
               {builderFeedback.valid ? (
                 <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-6 h-6" />
@@ -405,9 +405,9 @@ export default function CarbonLabPage() {
                   <AlertCircle className="w-6 h-6" />
                 </div>
               )}
-              <div>
-                <h4 className="font-extrabold text-lg text-[#101C3A]">{builderFeedback.name}</h4>
-                <div className="flex items-center gap-2 mt-1">
+              <div className="min-w-0 flex-1">
+                <h4 className="font-extrabold text-lg text-[#101C3A] truncate">{builderFeedback.name}</h4>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
                   <span
                     className={`text-xs font-bold px-2.5 py-0.5 rounded-full inline-block ${
                       builderFeedback.valid
@@ -417,7 +417,7 @@ export default function CarbonLabPage() {
                   >
                     {builderFeedback.valid ? 'Molekul Valid & Stabil' : 'Struktur Belum Setimbang'}
                   </span>
-                  <span className="font-mono text-xs text-slate-500 font-bold">
+                  <span className="font-mono text-xs text-slate-500 font-bold truncate">
                     {builderFeedback.formula}
                   </span>
                 </div>
@@ -425,11 +425,11 @@ export default function CarbonLabPage() {
             </div>
 
             {builderFeedback.valid && builderFeedback.condensed !== '—' && (
-              <div className="p-3.5 rounded-xl bg-white border border-slate-200">
+              <div className="p-3.5 rounded-xl bg-white border border-slate-200 min-w-0 overflow-x-auto">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   Rumus Struktur Terkondensasi:
                 </span>
-                <span className="font-mono text-sm font-bold text-[#101C3A]">
+                <span className="font-mono text-sm font-bold text-[#101C3A] block">
                   {builderFeedback.condensed}
                 </span>
               </div>
@@ -454,9 +454,9 @@ export default function CarbonLabPage() {
 
       {/* TAB 2: COMBUSTION SIMULATION */}
       {activeTab === 'combustion' && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-sm space-y-8 animate-in fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
+        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-sm space-y-8 animate-in fade-in min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0">
+            <div className="min-w-0">
               <span className="text-xs font-bold uppercase tracking-wider text-amber-600">
                 Eksperimen 2 — Stoikiometri Reaksi
               </span>
@@ -467,7 +467,7 @@ export default function CarbonLabPage() {
             </div>
 
             {/* Fuel Selector */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {(['metana', 'propana', 'butana'] as const).map((fuel) => (
                 <button
                   key={fuel}
@@ -584,7 +584,7 @@ export default function CarbonLabPage() {
 
       {/* TAB 3: UNSATURATION TEST */}
       {activeTab === 'unsaturation' && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-sm space-y-6 animate-in fade-in">
+        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-sm space-y-6 animate-in fade-in min-w-0">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-teal-600">
               Eksperimen 3 — Uji Adisi Bromin
@@ -595,7 +595,7 @@ export default function CarbonLabPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-w-0">
             {/* Visual Test Tube Simulation */}
             <div className="p-8 rounded-3xl bg-slate-900 text-white flex flex-col items-center justify-center space-y-4 shadow-inner">
               <div className="w-24 h-48 rounded-b-3xl border-2 border-slate-500 relative flex flex-col justify-end p-2 overflow-hidden bg-slate-800/60 shadow-xl">
