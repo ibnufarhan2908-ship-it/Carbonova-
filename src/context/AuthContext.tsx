@@ -10,6 +10,7 @@ import { initDatabase } from '../services/db.ts'
 import { isFirebaseConfigured } from '../services/firebase.ts'
 import {
   firebaseSignIn,
+  firebaseSignInWithGoogle,
   firebaseSignUp,
   firebaseSignOut,
   subscribeToFirebaseAuthState,
@@ -23,6 +24,7 @@ export interface AuthContextType {
   isLoading: boolean
   isFirebaseActive: boolean
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>
+  loginWithGoogle: () => Promise<{ success: boolean; user?: User; error?: string }>
   register: (
     payloadOrName: RegisterPayload | string,
     email?: string,
@@ -150,6 +152,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  const handleLoginWithGoogle = async (): Promise<{
+    success: boolean
+    user?: User
+    error?: string
+  }> => {
+    setIsLoading(true)
+    try {
+      if (isFirebaseConfigured) {
+        const res = await firebaseSignInWithGoogle()
+        if (res.success && res.user) {
+          setUser(res.user)
+          return { success: true, user: res.user }
+        }
+        return { success: false, error: res.error || 'Gagal masuk dengan Google.' }
+      }
+
+      return {
+        success: false,
+        error:
+          'Fitur Masuk dengan Google memerlukan konfigurasi Firebase aktif. Pastikan VITE_FIREBASE_API_KEY dan konfigurasi Firebase lainnya sudah diisi di file .env.',
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleRegister = async (
     payloadOrName: RegisterPayload | string,
     email?: string,
@@ -243,6 +271,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading,
     isFirebaseActive: isFirebaseConfigured,
     login: handleLogin,
+    loginWithGoogle: handleLoginWithGoogle,
     register: handleRegister,
     logout: handleLogout,
     refreshUser,
