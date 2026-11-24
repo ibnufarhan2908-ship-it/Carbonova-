@@ -119,6 +119,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fallback ke penyimpanan lokal jika akun terdaftar di lokal / offline
         const localRes = await authLogin(cleanEmail, pass)
         if (localRes.success && localRes.user) {
+          // Jika akun guru resmi berhasil login lokal namun belum terdaftar di Firebase Auth,
+          // sinkronkan ke Firebase Auth agar sesi Firestore Cloud aktif dengan kredensial sah
+          if (isTeacherAccount(cleanEmail, localRes.user.id)) {
+            try {
+              const fbRegisterRes = await firebaseSignUp(
+                localRes.user.name,
+                cleanEmail,
+                pass,
+                'teacher'
+              )
+              if (fbRegisterRes.success && fbRegisterRes.user) {
+                setUser(fbRegisterRes.user)
+                return { success: true }
+              }
+            } catch (syncErr) {
+              console.warn('Gagal mendaftarkan akun guru ke Firebase Auth secara otomatis:', syncErr)
+            }
+          }
+
           setUser(localRes.user)
           return { success: true }
         }

@@ -383,15 +383,23 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
           <Loader2 className="w-8 h-8 text-[#1DAA9A] animate-spin" />
           <p className="text-xs font-semibold">Memuat data siswa secara real-time dari Firestore...</p>
         </div>
-      ) : error ? (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-          <div>
-            <p className="font-bold">Informasi Koneksi Firestore</p>
-            <p className="mt-0.5 text-amber-700">{error}. Menampilkan data siswa lokal/cache.</p>
-          </div>
-        </div>
-      ) : filteredStudents.length === 0 ? (
+      ) : (
+        <>
+          {error && (
+            <div className="mb-5 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-3 shadow-2xs">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-bold text-amber-900">Informasi Koneksi Cloud Firestore</p>
+                <p className="mt-0.5 text-amber-800 leading-relaxed">
+                  {error.includes('permissions')
+                    ? 'Aturan Firestore belum dipublikasikan di Firebase Console atau akun guru belum aktif di Firebase Authentication. Dashboard tetap berfungsi normal menampilkan data siswa dari penyimpanan lokal/cache.'
+                    : `${error}. Menampilkan data siswa dari penyimpanan lokal/cache.`}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {filteredStudents.length === 0 ? (
         <div className="py-12 text-center rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 p-6">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-sm font-bold text-slate-700">Tidak Ada Siswa Ditemukan</h3>
@@ -494,7 +502,9 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
           </table>
         </div>
       )}
-    </div>
+    </>
+  )}
+</div>
   )
 
   return (
