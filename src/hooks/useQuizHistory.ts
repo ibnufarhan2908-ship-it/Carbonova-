@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { QuizResult, QuizStatistics } from '../types/quiz'
 import {
   getQuizHistory,
@@ -8,44 +8,53 @@ import {
   getQuizStatistics,
 } from '../utils/quizStorage'
 
-export function useQuizHistory() {
-  const [history, setHistory] = useState<QuizResult[]>(() => getQuizHistory())
-  const [statistics, setStatistics] = useState<QuizStatistics>(() => getQuizStatistics())
+export function useQuizHistory(uid?: string | null) {
+  const [history, setHistory] = useState<QuizResult[]>(() => (uid ? getQuizHistory(uid) : []))
+  const [statistics, setStatistics] = useState<QuizStatistics>(() => getQuizStatistics(uid))
 
   const refreshData = useCallback(() => {
-    const storedHistory = getQuizHistory()
-    const stats = getQuizStatistics()
+    if (!uid) {
+      setHistory([])
+      setStatistics(getQuizStatistics(null))
+      return
+    }
+    const storedHistory = getQuizHistory(uid)
+    const stats = getQuizStatistics(uid)
     setHistory(storedHistory)
     setStatistics(stats)
-  }, [])
+  }, [uid])
+
+  useEffect(() => {
+    refreshData()
+  }, [refreshData])
 
   const saveResult = useCallback(
     (result: QuizResult) => {
-      const saved = saveStorageResult(result)
+      const saved = saveStorageResult(result, uid)
       refreshData()
       return saved
     },
-    [refreshData]
+    [refreshData, uid]
   )
 
   const deleteResult = useCallback(
     (id: string) => {
-      const success = deleteStorageResult(id)
+      const success = deleteStorageResult(id, uid)
       if (success) {
         refreshData()
       }
       return success
     },
-    [refreshData]
+    [refreshData, uid]
   )
 
   const clearHistory = useCallback(() => {
-    const success = clearStorageHistory()
+    const success = clearStorageHistory(uid)
     if (success) {
       refreshData()
     }
     return success
-  }, [refreshData])
+  }, [refreshData, uid])
 
   return {
     history,
@@ -54,5 +63,6 @@ export function useQuizHistory() {
     deleteResult,
     clearHistory,
     refreshData,
+    setHistory,
   }
 }

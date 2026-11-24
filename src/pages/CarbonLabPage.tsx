@@ -129,14 +129,14 @@ export default function CarbonLabPage() {
       name: 'Metana (CH₄)',
       formula: 'CH₄',
       completeEq: 'CH₄(g) + 2 O₂(g) → CO₂(g) + 2 H₂O(g) + 890 kJ',
-      incompleteEq: '2 CH₄(g) + 3 O₂(g) → 2 CO(g) + 4 H₂O(g) + Jelaga C',
+      incompleteEq: '4 CH4 + 5 O2 → 2 CO + 2 C + 8 H2O',
       atomsComplete: {
         reaktan: { C: 1, H: 4, O: 4 },
         produk: { C: 1, H: 4, O: 4 },
       },
       atomsIncomplete: {
-        reaktan: { C: 2, H: 8, O: 6 },
-        produk: { C: 2, H: 8, O: 6 },
+        reaktan: { C: 4, H: 16, O: 10 },
+        produk: { C: 4, H: 16, O: 10 },
       },
       notes:
         'Komponen utama gas alam (LNG). Pembakaran sempurna menghasilkan nyala api biru yang efisien tanpa partikulat jelaga.',
@@ -145,14 +145,14 @@ export default function CarbonLabPage() {
       name: 'Propana (C₃H₈)',
       formula: 'C₃H₈',
       completeEq: 'C₃H₈(g) + 5 O₂(g) → 3 CO₂(g) + 4 H₂O(g) + 2220 kJ',
-      incompleteEq: '2 C₃H₈(g) + 7 O₂(g) → 6 CO(g) + 8 H₂O(g) + Jelaga C',
+      incompleteEq: '2 C3H8 + 6 O2 → 4 CO + 2 C + 8 H2O',
       atomsComplete: {
         reaktan: { C: 3, H: 8, O: 10 },
         produk: { C: 3, H: 8, O: 10 },
       },
       atomsIncomplete: {
-        reaktan: { C: 6, H: 16, O: 14 },
-        produk: { C: 6, H: 16, O: 14 },
+        reaktan: { C: 6, H: 16, O: 12 },
+        produk: { C: 6, H: 16, O: 12 },
       },
       notes:
         'Bahan bakar elpiji (LPG). Memerlukan 5 volume gas oksigen untuk membakar sempurna setiap 1 volume gas propana.',
@@ -161,14 +161,14 @@ export default function CarbonLabPage() {
       name: 'Butana (C₄H₁₀)',
       formula: 'C₄H₁₀',
       completeEq: '2 C₄H₁₀(g) + 13 O₂(g) → 8 CO₂(g) + 10 H₂O(g) + 5750 kJ',
-      incompleteEq: '2 C₄H₁₀(g) + 9 O₂(g) → 8 CO(g) + 10 H₂O(g) + Jelaga C',
+      incompleteEq: '2 C4H10 + 8 O2 → 6 CO + 2 C + 10 H2O',
       atomsComplete: {
         reaktan: { C: 8, H: 20, O: 26 },
         produk: { C: 8, H: 20, O: 26 },
       },
       atomsIncomplete: {
-        reaktan: { C: 8, H: 20, O: 18 },
-        produk: { C: 8, H: 20, O: 18 },
+        reaktan: { C: 8, H: 20, O: 16 },
+        produk: { C: 8, H: 20, O: 16 },
       },
       notes:
         'Bahan bakar korek gas portabel. Jika oksigen terbatas, nyala api berubah warna menjadi kuning kemerahan dan mengeluarkan asap jelaga hitam.',
