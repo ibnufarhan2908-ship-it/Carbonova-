@@ -93,7 +93,7 @@ export default function StudentDashboardPage() {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#101C3A] tracking-tight">
-              Halo, {user?.name || 'Siswa'}! 👋
+              Halo, {user?.name?.trim() ? user.name : user?.email || 'Siswa'}! 👋
             </h1>
             <p className="text-sm text-slate-500">
               Pantau progres materi kimia karbon dan evaluasi capaian latihan soalmu di sini.
@@ -108,10 +108,10 @@ export default function StudentDashboardPage() {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-slate-800 leading-tight truncate">
-                  {user?.name || 'Siswa Demo'}
+                  {user?.name?.trim() ? user.name : user?.email || 'Siswa'}
                 </span>
                 <span className="text-[11px] text-slate-500 truncate max-w-[150px]">
-                  {user?.email || 'siswa.demo@carbonova.test'}
+                  {user?.email || '-'}
                 </span>
               </div>
             </div>

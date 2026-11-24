@@ -81,6 +81,7 @@ export default function RegisterPage() {
 
     setIsSubmitting(true)
     try {
+      // 1 & 2: Selalu paksa role = "student"
       const result = await register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
@@ -94,9 +95,9 @@ export default function RegisterPage() {
       } else {
         setAuthError(result.error || 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.')
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Registration error:', err)
-      setAuthError('Gagal memproses pendaftaran. Silakan coba kembali beberapa saat lagi.')
+      setAuthError(err?.message || 'Gagal memproses pendaftaran. Silakan coba kembali beberapa saat lagi.')
     } finally {
       setIsSubmitting(false)
     }

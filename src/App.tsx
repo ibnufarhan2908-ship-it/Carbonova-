@@ -30,11 +30,17 @@ function RootRedirect() {
     return <Navigate to="/login" replace />
   }
 
-  if (user.role === 'teacher' && isTeacherAccount(user.email, user.id)) {
-    return <Navigate to="/guru/dashboard" replace />
+  // Determine dashboard based on role and whitelist
+  const isTrustedTeacher = user?.role === 'teacher' && isTeacherAccount(user.email, user.id);
+  const isDemoTeacher = user?.role === 'teacher_demo' && isTeacherEmail(user.email);
+  if (isTrustedTeacher) {
+    return <Navigate to="/guru/dashboard" replace />;
   }
+  if (isDemoTeacher) {
+    return <Navigate to="/guru/dashboard" replace />; // same page, UI will handle demo mode
+  }
+  return <Navigate to="/siswa/dashboard" replace />;
 
-  return <Navigate to="/siswa/dashboard" replace />
 }
 
 export default function App() {
