@@ -9,6 +9,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, isFirebaseConfigured } from './firebase.ts'
 import type { User, UserRole } from '../types/auth.ts'
+import { isTeacherAccount } from '../config/authConfig.ts'
 
 /**
  * Mengonversi FirebaseUser + data profil Firestore menjadi model User aplikasi
@@ -18,7 +19,9 @@ export async function getOrCreateUserProfile(
   defaultRole: UserRole = 'student'
 ): Promise<User> {
   const now = new Date().toISOString()
-  const fallbackRole: UserRole = fbUser.email?.toLowerCase().includes('guru') ? 'teacher' : defaultRole
+  // Hak Akses AD11-01: Verifikasi akun guru tepercaya, bukan sekadar substring string email
+  const isTeacher = isTeacherAccount(fbUser.email, fbUser.uid)
+  const fallbackRole: UserRole = isTeacher ? 'teacher' : (defaultRole === 'teacher' && isTeacher ? 'teacher' : 'student')
 
   if (!db) {
     return {
@@ -44,9 +47,15 @@ export async function getOrCreateUserProfile(
         // Abaikan jika rule Firestore terbatas
       }
 
-      let parsedRole: UserRole = fallbackRole
-      if (data.role === 'siswa' || data.role === 'student') parsedRole = 'student'
-      else if (data.role === 'guru' || data.role === 'teacher') parsedRole = 'teacher'
+      let parsedRole: UserRole = 'student'
+      if (data.role === 'guru' || data.role === 'teacher') {
+        // Hak Akses AD11-01: Role guru hanya diakui jika email/UID cocok dengan whitelist tepercaya
+        if (isTeacherAccount(data.email || fbUser.email, fbUser.uid)) {
+          parsedRole = 'teacher'
+        } else {
+          parsedRole = 'student'
+        }
+      }
 
       return {
         id: fbUser.uid,
@@ -61,7 +70,7 @@ export async function getOrCreateUserProfile(
     }
 
     // Jika dokumen profil belum ada di Firestore, buat profil baru
-    const roleYangDipilih = (fallbackRole === 'teacher' || fallbackRole === 'guru') ? 'guru' : 'siswa'
+    const roleYangDipilih = fallbackRole === 'teacher' ? 'guru' : 'siswa'
     const newProfile: User = {
       id: fbUser.uid,
       name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
@@ -166,16 +175,20 @@ export async function firebaseSignUp(
       }
     }
 
-    // Role yang disimpan ke Firestore: "guru" atau "siswa"
-    const roleYangDipilih = (role === 'teacher' || role === 'guru') ? 'guru' : 'siswa'
+    // Hak Akses AD11-01: Pendaftaran publik selalu dipaksa role 'student' ('siswa')
+    // Role 'teacher' hanya diizinkan jika email/UID cocok dengan konfigurasi whitelist guru tepercaya
+    const cleanEmail = email.trim().toLowerCase()
+    const isTeacher = (role === 'teacher' || role === 'guru') && isTeacherAccount(cleanEmail, fbUser.uid)
+    const effectiveRole: UserRole = isTeacher ? 'teacher' : 'student'
+    const roleYangDipilih = effectiveRole === 'teacher' ? 'guru' : 'siswa'
 
     // Buat dokumen profil di Firestore menggunakan UID sebagai Document ID
     const now = new Date().toISOString()
     const newProfile: User = {
       id: fbUser.uid,
       name: name.trim() || fbUser.email?.split('@')[0] || 'Pengguna',
-      email: email.trim().toLowerCase(),
-      role: (role === 'teacher' || role === 'guru') ? 'teacher' : 'student',
+      email: cleanEmail,
+      role: effectiveRole,
       kelas: kelas.trim() || '-',
       status: 'active',
       createdAt: now,

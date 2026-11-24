@@ -14,6 +14,12 @@ export interface StoredQuizResult extends QuizResult {
   userId?: string
 }
 
+export interface SaveQuizResultResponse {
+  success: boolean
+  data?: StoredQuizResult
+  error?: string
+}
+
 /**
  * Format key draf jawaban:
  * Jika uid bernilai falsy atau 'guest': `carbonova:draft:guest:{category}:{quizId}:{questionsVersion}`
@@ -57,8 +63,8 @@ export function saveQuizDraft(
     questionsVersion?: string
     answers: Record<string, any>
   }
-): void {
-  if (typeof window === 'undefined') return
+): boolean {
+  if (typeof window === 'undefined') return false
   try {
     const qVersion = params.questionsVersion || 'v1'
     const key = getDraftStorageKey(uid, params.category, params.quizId, qVersion)
@@ -72,8 +78,10 @@ export function saveQuizDraft(
       version: 2,
     }
     localStorage.setItem(key, JSON.stringify(draftData))
+    return true
   } catch (error) {
     console.error('Gagal menyimpan draf kuis ke localStorage:', error)
+    return false
   }
 }
 
@@ -176,9 +184,19 @@ export function getQuizAttempt(uid: string, attemptId: string): StoredQuizResult
 
 /**
  * Menyimpan hasil kuis baru ke localStorage dengan userId dan key terisolasi.
+ * Mengembalikan objek SaveQuizResultResponse untuk menghentikan klaim sukses palsu (AD11-03).
  */
-export function saveQuizResult(result: QuizResult, uid?: string | null): StoredQuizResult {
-  if (typeof window === 'undefined') return result
+export function saveQuizResult(
+  result: QuizResult,
+  uid?: string | null
+): SaveQuizResultResponse {
+  if (typeof window === 'undefined') {
+    return {
+      success: false,
+      error: 'Lingkungan eksekusi tidak memiliki akses ke window localStorage.',
+    }
+  }
+
   try {
     const itemUserId = uid || (result as StoredQuizResult).userId
     const resultToSave: StoredQuizResult = {
@@ -202,14 +220,28 @@ export function saveQuizResult(result: QuizResult, uid?: string | null): StoredQ
       const existingIndex = userHistory.findIndex((item) => item.id === resultToSave.id)
       if (existingIndex === -1) {
         userHistory = [resultToSave, ...userHistory]
-        localStorage.setItem(userKey, JSON.stringify(userHistory))
+      } else {
+        // Pembaruan attempt yang sama jika terjadi coba ulang (retry)
+        userHistory[existingIndex] = resultToSave
       }
+
+      localStorage.setItem(userKey, JSON.stringify(userHistory))
     }
 
-    return resultToSave
-  } catch (error) {
+    return {
+      success: true,
+      data: resultToSave,
+    }
+  } catch (error: any) {
     console.error('Gagal menyimpan hasil kuis ke localStorage:', error)
-    return result
+    const errorMsg =
+      error?.name === 'QuotaExceededError' || error?.code === 22 || error?.code === 1014
+        ? 'Kapasitas penyimpanan lokal browser telah penuh (QuotaExceededError).'
+        : error?.message || 'Akses penyimpanan lokal ditolak oleh browser.'
+    return {
+      success: false,
+      error: errorMsg,
+    }
   }
 }
 

@@ -14,6 +14,7 @@ import {
   firebaseSignOut,
   subscribeToFirebaseAuthState,
 } from '../services/firebaseAuth.ts'
+import { isTeacherAccount } from '../config/authConfig.ts'
 
 export interface AuthContextType {
   user: User | null
@@ -116,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Khusus akun demo resmi Carbonova:
         // Jika belum terdaftar di Firebase Authentication, otomatis daftarkan ke Firebase agar tersimpan di console!
         if (cleanEmail.includes('.demo@carbonova.test')) {
-          const isTeacher = cleanEmail.includes('guru')
+          const isTeacher = isTeacherAccount(cleanEmail)
           const demoName = isTeacher ? 'Guru Demo' : 'Siswa Demo'
           const demoRole: UserRole = isTeacher ? 'teacher' : 'student'
 
@@ -153,22 +154,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     payloadOrName: RegisterPayload | string,
     email?: string,
     pass?: string,
-    role: UserRole = 'student',
+    _role: UserRole = 'student',
     kelas: string = '-'
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true)
     try {
+      // Keamanan AD11-01: Selalu paksa role 'student' untuk pendaftaran mandiri publik
+      const forcedRole: UserRole = 'student'
       const payload: RegisterPayload =
         typeof payloadOrName === 'string'
           ? {
               name: payloadOrName,
               email: email || '',
               password: pass || '',
-              role,
+              role: forcedRole,
               kelas: kelas || '-',
             }
           : {
               ...payloadOrName,
+              role: forcedRole,
               kelas: payloadOrName.kelas || kelas || '-',
             }
 
@@ -179,20 +183,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           payload.name,
           cleanEmail,
           payload.password,
-          payload.role,
+          forcedRole,
           payload.kelas || '-'
         )
         if (fbRes.success && fbRes.user) {
-          setUser(fbRes.user)
+          setUser({
+            ...fbRes.user,
+            role: 'student',
+          })
           return { success: true }
         }
         return { success: false, error: fbRes.error || 'Gagal mendaftar akun di Firebase.' }
       }
 
       // Pendaftaran lokal jika Firebase belum dikonfigurasi
-      const localRes = await authRegister(payload)
+      const localRes = await authRegister({
+        ...payload,
+        role: forcedRole,
+      })
       if (localRes.success && localRes.user) {
-        setUser(localRes.user)
+        setUser({
+          ...localRes.user,
+          role: 'student',
+        })
         return { success: true }
       }
       return { success: false, error: localRes.error || 'Gagal mendaftar akun lokal.' }
@@ -211,9 +224,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null)
   }
 
+  // Hak Akses AD11-01: Verifikasi integritas role sebelum diekspos ke konteks aplikasi
+  const verifiedRole: UserRole | null = user
+    ? user.role === 'teacher' && isTeacherAccount(user.email, user.id)
+      ? 'teacher'
+      : 'student'
+    : null
+
   const value: AuthContextType = {
-    user,
-    role: user ? user.role : null,
+    user: user
+      ? {
+          ...user,
+          role: verifiedRole || 'student',
+        }
+      : null,
+    role: verifiedRole,
     isAuthenticated: !!user,
     isLoading,
     isFirebaseActive: isFirebaseConfigured,

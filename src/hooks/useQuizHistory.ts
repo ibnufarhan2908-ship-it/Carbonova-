@@ -6,6 +6,7 @@ import {
   deleteQuizResult as deleteStorageResult,
   clearQuizHistory as clearStorageHistory,
   getQuizStatistics,
+  type SaveQuizResultResponse,
 } from '../utils/quizStorage'
 
 export function useQuizHistory(uid?: string | null) {
@@ -29,10 +30,12 @@ export function useQuizHistory(uid?: string | null) {
   }, [refreshData])
 
   const saveResult = useCallback(
-    (result: QuizResult) => {
-      const saved = saveStorageResult(result, uid)
-      refreshData()
-      return saved
+    (result: QuizResult): SaveQuizResultResponse => {
+      const res = saveStorageResult(result, uid)
+      if (res.success) {
+        refreshData()
+      }
+      return res
     },
     [refreshData, uid]
   )

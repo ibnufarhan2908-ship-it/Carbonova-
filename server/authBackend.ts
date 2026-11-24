@@ -183,7 +183,7 @@ export async function handleAuthApi(req: IncomingMessage, res: ServerResponse): 
   if (url === '/api/auth/register' && req.method === 'POST') {
     try {
       const body = await parseJsonBody(req)
-      const { name, email, password, confirmPassword, role, invitationCode } = body
+      const { name, email, password, confirmPassword, role } = body
 
       // Validasi kelengkapan field
       if (!name || !email || !password || !role) {
@@ -241,32 +241,14 @@ export async function handleAuthApi(req: IncomingMessage, res: ServerResponse): 
         return true
       }
 
-      // Validasi khusus Role Guru (Teacher) dengan Kode Undangan
-      let assignedRole: 'teacher' | 'student' = 'student'
-      if (role === 'teacher') {
-        const expectedCode = TEACHER_INVITATION_CODE
-        const submittedCode = String(invitationCode || '').trim()
-
-        if (!submittedCode) {
-          sendJson(res, 403, {
-            success: false,
-            error: 'Kode undangan guru wajib diisi untuk registrasi akun tenaga pendidik.',
-          })
-          return true
-        }
-
-        if (submittedCode !== expectedCode) {
-          sendJson(res, 403, {
-            success: false,
-            error: 'Kode undangan guru tidak valid. Silakan hubungi administrator sekolah untuk memperoleh kode resmi.',
-          })
-          return true
-        }
-
-        assignedRole = 'teacher'
-      } else {
-        assignedRole = 'student'
-      }
+      // Hak Akses AD11-01: Form pendaftaran publik selalu mendapatkan role 'student'
+      // Role 'teacher' hanya dapat diberikan kepada akun whitelist guru resmi tepercaya
+      const trustedTeacherEmail = (
+        process.env.VITE_TEACHER_EMAIL ||
+        process.env.TEACHER_EMAIL ||
+        'guru.demo@carbonova.test'
+      ).trim().toLowerCase()
+      const assignedRole: 'teacher' | 'student' = cleanEmail === trustedTeacherEmail ? 'teacher' : 'student'
 
       // Hashing password dengan PBKDF2 & Salt unik
       const salt = generateSalt()

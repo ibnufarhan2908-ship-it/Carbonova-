@@ -7,6 +7,7 @@ import type {
   StudentSummaryStats,
 } from '../types/auth'
 import { generateSalt, hashPassword } from './crypto.ts'
+import { isTeacherAccount } from '../config/authConfig.ts'
 import { LESSON_MODULES } from '../data/lessons.ts'
 import { QUIZ_QUESTIONS } from '../data/questions.ts'
 import {
@@ -39,6 +40,7 @@ function setStoredItem<T>(key: string, value: T): void {
     localStorage.setItem(key, JSON.stringify(value))
   } catch (error) {
     console.error(`Error writing ${key} to storage:`, error)
+    throw error
   }
 }
 
@@ -119,7 +121,7 @@ export function getAllUsers(): User[] {
     id: u.id,
     name: u.name,
     email: u.email,
-    role: u.role,
+    role: u.role === 'teacher' && isTeacherAccount(u.email, u.id) ? 'teacher' : 'student',
     status: u.status,
     createdAt: u.createdAt,
     lastLoginAt: u.lastLoginAt,
@@ -139,7 +141,7 @@ export function getUserById(id: string): User | undefined {
     id: found.id,
     name: found.name,
     email: found.email,
-    role: found.role,
+    role: found.role === 'teacher' && isTeacherAccount(found.email, found.id) ? 'teacher' : 'student',
     status: found.status,
     createdAt: found.createdAt,
     lastLoginAt: found.lastLoginAt,
@@ -198,21 +200,27 @@ export function getSubmissionsByStudent(userId: string): StudentQuizSubmission[]
   return all.filter((s) => s.userId === userId)
 }
 
-export function saveQuizSubmission(submission: StudentQuizSubmission): void {
-  const all = getAllSubmissions()
-  // Cegah duplikasi berdasarkan id attempt
-  const existingIdx = all.findIndex((s) => s.id === submission.id)
-  if (existingIdx !== -1) {
-    all[existingIdx] = submission
-  } else {
-    all.unshift(submission)
-  }
-  setStoredItem(SUBMISSIONS_STORAGE_KEY, all)
+export function saveQuizSubmission(submission: StudentQuizSubmission): boolean {
+  try {
+    const all = getAllSubmissions()
+    // Cegah duplikasi berdasarkan id attempt
+    const existingIdx = all.findIndex((s) => s.id === submission.id)
+    if (existingIdx !== -1) {
+      all[existingIdx] = submission
+    } else {
+      all.unshift(submission)
+    }
+    setStoredItem(SUBMISSIONS_STORAGE_KEY, all)
 
-  // Sinkronisasi otomatis ke Cloud Firestore jika aktif
-  saveSubmissionToFirestore(submission).catch((err) => {
-    console.warn('Gagal sinkronisasi submisi ke Firestore:', err)
-  })
+    // Sinkronisasi otomatis ke Cloud Firestore jika aktif
+    saveSubmissionToFirestore(submission).catch((err) => {
+      console.warn('Gagal sinkronisasi submisi ke Firestore:', err)
+    })
+    return true
+  } catch (err) {
+    console.error('Gagal menyimpan submisi kuis ke database lokal:', err)
+    return false
+  }
 }
 
 export function deleteSubmission(id: string): boolean {

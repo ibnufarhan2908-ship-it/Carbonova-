@@ -29,3 +29,77 @@ Meskipun logika isolasi lokal (localStorage, RBAC memori, proteksi hook, dan mit
 
 3. **Sinkronisasi Multi-Tab / Multi-Device Realtime Cloud**:
    - Pengujian penyelarasan riwayat kuis lintas perangkat nyata (misal: pengerjaan di Laptop A disinkronkan ke Handphone B melalui Firestore listener) masih menunggu ketersediaan environment Firebase live.
+
+---
+
+## 3. Dokumentasi Pengujian Temuan AD11-03: Penanganan Error Penyimpanan Hasil Kuis
+
+### Deskripsi Temuan AD11-03
+Sebelum perbaikan, fungsi `saveQuizResult` menelan *exception* (misalnya `QuotaExceededError` atau `DOMException: Storage quota exceeded`) pada blok `catch` dan tetap mengembalikan objek `result` seolah-olah data tersimpan. Halaman `QuizPage.tsx` secara otomatis menampilkan banner hijau *"Hasil pengerjaan otomatis tersimpan di localStorage browser Anda."*, padahal data tidak tersimpan dan draf kuis langsung terhapus.
+
+### Solusi & Mitigasi yang Diterapkan
+1. **Eliminasi Klaim Sukses Palsu**: `saveQuizResult` pada `src/utils/quizStorage.ts` kini mengembalikan objek bertipe `SaveQuizResultResponse`:
+   ```ts
+   export interface SaveQuizResultResponse {
+     success: boolean
+     data?: StoredQuizResult
+     error?: string
+   }
+   ```
+2. **Kondisional Banner Status**: Di `QuizPage.tsx`, pesan sukses berwarna hijau HANYA muncul jika `saveRes.success === true`.
+3. **Penanganan Error Ramah Pengguna**: Jika penyimpanan gagal (`saveRes.success === false`):
+   - Banner error (amber/kuning) ditampilkan dengan pesan eksplisit mengenai penyebab kegagalan (misalnya kuota penuh).
+   - Skor akhir, butir evaluasi, dan pembahasan soal **tetap tampil utuh** agar siswa tidak kehilangan nilai belajarnya.
+   - Draf jawaban siswa **tidak dihapus** dari storage.
+   - Disediakan tombol **"Coba Simpan Ulang (Retry)"** dengan *idempotency* (mempertahankan ID percobaan yang sama agar tidak terjadi duplikasi saat penyimpanan berhasil).
+   - Disediakan opsi **"Ekspor Hasil (JSON)"** dan **"Unduh Laporan (Teks)"** sebagai berkas cadangan offline mandiri bagi siswa.
+
+---
+
+### Cara Mensimulasikan Gagal Simpan di Browser
+
+Anda dapat mensimulasikan kondisi kegagalan kuota penyimpanan (`QuotaExceededError`) di browser melalui Console DevTools (`F12`):
+
+#### Langkah Simulasi:
+1. Buka halaman kuis di browser (`http://localhost:5173/latihan`).
+2. Jawab beberapa soal kuis hingga selesai.
+3. Buka **DevTools** (`F12` atau `Ctrl + Shift + I`) lalu masuk ke tab **Console**.
+4. Tempelkan (*paste*) script mock berikut untuk memaksa `localStorage.setItem` melempar `QuotaExceededError`:
+   ```javascript
+   window.__origSetItem = localStorage.setItem;
+   localStorage.setItem = function(key, val) {
+     if (key.includes('history')) {
+       const err = new Error('The quota has been exceeded.');
+       err.name = 'QuotaExceededError';
+       err.code = 22;
+       throw err;
+     }
+     return window.__origSetItem.apply(this, arguments);
+   };
+   console.warn('⚠️ Simulasi QuotaExceededError aktif pada localStorage');
+   ```
+5. Kembali ke halaman kuis dan klik tombol **"Kumpulkan Jawaban"**.
+6. **Periksa Hasil:**
+   - Pesan sukses hijau **TIDAK muncul**.
+   - Muncul banner peringatan kuning: *"Penyimpanan Otomatis ke Browser Gagal"*.
+   - Nilai skor dan pembahasan seluruh butir soal tetap dapat dipelajari.
+   - Muncul tombol **"Coba Simpan Ulang (Retry)"**, **"Ekspor Hasil (JSON)"**, dan **"Unduh Laporan (Teks)"**.
+7. Klik tombol **"Ekspor Hasil (JSON)"** atau **"Unduh Laporan (Teks)"**: berkas hasil kuis langsung terunduh ke komputer Anda.
+8. Pulihkan kembali fungsi `localStorage` asli di Console:
+   ```javascript
+   localStorage.setItem = window.__origSetItem;
+   console.log('✅ Penyimpanan normal dipulihkan');
+   ```
+9. Klik tombol **"Coba Simpan Ulang (Retry)"**:
+   - Sistem berhasil menyimpan data.
+   - Banner otomatis berubah menjadi hijau sukses: *"Hasil pengerjaan otomatis tersimpan di localStorage browser Anda."*.
+   - Tidak terjadi duplikasi entri riwayat kuis.
+
+---
+
+### Hasil Pengujian Otomatis AD11-03
+Jalankan di terminal:
+```powershell
+node test_quiz_storage_error.mjs
+```
+Hasil: **17 Lulus, 0 Gagal**.

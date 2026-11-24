@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import type { UserRole } from '../../types/auth'
+import { isTeacherEmail } from '../../config/authConfig'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -34,7 +35,8 @@ export default function LoginPage() {
   const [kelas, setKelas] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [role, setRole] = useState<UserRole>('student')
+  // Hak Akses AD11-01: Pendaftaran publik selalu 'student' secara default
+  const role: UserRole = 'student'
   const [showPassword, setShowPassword] = useState(false)
 
   // Status & feedback
@@ -105,7 +107,8 @@ export default function LoginPage() {
       return
     }
 
-    if (userRole === 'teacher' || (!userRole && email.toLowerCase().includes('guru'))) {
+    // Hak Akses AD11-01: Akses guru hanya diberikan jika role teacher dan email terverifikasi whitelist guru
+    if (userRole === 'teacher' || (!userRole && isTeacherEmail(email))) {
       navigate('/guru/dashboard', { replace: true })
     } else {
       navigate('/siswa/dashboard', { replace: true })
@@ -129,12 +132,12 @@ export default function LoginPage() {
           setAuthError(result.error || 'Email atau kata sandi tidak sesuai.')
         }
       } else {
-        // Mode Register
-        const result = await register(name, email, password, role, kelas || 'XI MIPA 1')
+        // Mode Register (AD11-01: Dipaksa selalu student)
+        const result = await register(name, email, password, 'student', kelas || 'XI MIPA 1')
         if (result.success) {
           setAuthSuccess('Pendaftaran berhasil! Mengalihkan ke dashboard...')
           setTimeout(() => {
-            handleRedirect(role)
+            handleRedirect('student')
           }, 600)
         } else {
           setAuthError(result.error || 'Gagal mendaftar akun. Silakan periksa kembali data Anda.')
@@ -331,55 +334,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Pilihan Role (Mode Register) */}
-            {mode === 'register' && (
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Daftar Sebagai
-                </label>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setRole('student')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
-                      role === 'student'
-                        ? 'bg-teal-50/80 border-[#1DAA9A] ring-1 ring-[#1DAA9A] text-teal-950'
-                        : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <GraduationCap
-                      className={`w-4 h-4 shrink-0 ${
-                        role === 'student' ? 'text-[#1DAA9A]' : 'text-slate-400'
-                      }`}
-                    />
-                    <div>
-                      <p className="text-xs font-bold">Siswa</p>
-                      <p className="text-[10px] text-slate-500">Akses Modul & Kuis</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRole('teacher')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
-                      role === 'teacher'
-                        ? 'bg-blue-50/80 border-[#101C3A] ring-1 ring-[#101C3A] text-[#101C3A]'
-                        : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <UserCheck
-                      className={`w-4 h-4 shrink-0 ${
-                        role === 'teacher' ? 'text-[#101C3A]' : 'text-slate-400'
-                      }`}
-                    />
-                    <div>
-                      <p className="text-xs font-bold">Guru</p>
-                      <p className="text-[10px] text-slate-500">Kelola & Evaluasi</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Input Email */}
             <div>

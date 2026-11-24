@@ -39,6 +39,7 @@ import {
 import type { StudentQuizSubmission } from '../../types/auth'
 import QuizResultDetailModal from '../../components/quiz/QuizResultDetailModal'
 import type { QuizResult } from '../../types/quiz'
+import { isTeacherAccount } from '../../config/authConfig'
 
 interface TeacherDashboardPageProps {
   initialView?: 'overview' | 'students' | 'results'
@@ -87,8 +88,21 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
     return clean === 'siswa.demo@carbonova.test' || clean.endsWith('@carbonova.test')
   }
 
+  // Hak Akses AD11-01: Guard di level komponen agar role student tidak dapat mengakses dashboard guru
+  useEffect(() => {
+    if (user && (user.role !== 'teacher' || !isTeacherAccount(user.email, user.id))) {
+      navigate('/siswa/dashboard', { replace: true })
+    }
+  }, [user, navigate])
+
   // 1. REAL-TIME LISTENER SISWA & QUIZ RESULTS DARI FIRESTORE
   useEffect(() => {
+    // Hak Akses AD11-01: Cegah pembacaan data rekap siswa jika bukan guru tepercaya
+    if (!user || user.role !== 'teacher' || !isTeacherAccount(user.email, user.id)) {
+      setIsLoading(false)
+      return
+    }
+
     // Sinkronisasi data lokal jika ada
     syncFromFirestore().catch(() => {})
 

@@ -2,6 +2,7 @@ import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import type { UserRole } from '../../types/auth'
+import { isTeacherAccount } from '../../config/authConfig'
 import { Atom } from 'lucide-react'
 
 interface ProtectedRouteProps {
@@ -29,9 +30,13 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     return <Navigate to="/login" state={{ from: location.pathname }} replace />
   }
 
-  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  // Hak Akses AD11-01: Verifikasi ketat role teacher berdasarkan whitelist tepercaya
+  const isTeacher = user.role === 'teacher' && isTeacherAccount(user.email, user.id)
+  const verifiedRole: UserRole = isTeacher ? 'teacher' : 'student'
+
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(verifiedRole)) {
     // Pengguna tidak memiliki izin hak akses untuk halaman ini
-    if (user.role === 'teacher') {
+    if (verifiedRole === 'teacher') {
       return <Navigate to="/guru/dashboard" replace />
     } else {
       return <Navigate to="/siswa/dashboard" replace />

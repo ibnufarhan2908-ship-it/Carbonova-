@@ -1,6 +1,7 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { isTeacherAccount } from '../../config/authConfig'
 import { Atom } from 'lucide-react'
 
 interface PublicRouteProps {
@@ -22,7 +23,7 @@ export default function PublicRoute({ children }: PublicRouteProps) {
   }
 
   if (isAuthenticated && user) {
-    if (user.role === 'teacher') {
+    if (user.role === 'teacher' && isTeacherAccount(user.email, user.id)) {
       return <Navigate to="/guru/dashboard" replace />
     } else {
       return <Navigate to="/siswa/dashboard" replace />

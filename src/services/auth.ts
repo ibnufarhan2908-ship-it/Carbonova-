@@ -1,5 +1,6 @@
 import type { AuthSession, User, UserRole, RegisterPayload, AuthResponse, StoredUser } from '../types/auth.ts'
 import { verifyPassword, generateSessionToken, generateSalt, hashPassword } from './crypto.ts'
+import { isTeacherAccount } from '../config/authConfig.ts'
 import {
   initDatabase,
   getStoredUserByEmail,
@@ -11,9 +12,6 @@ import {
 
 const SESSION_STORAGE_KEY = 'carbonova_auth_session_v1'
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000 // 24 jam
-
-// Kode rahasia undangan guru default (dapat disesuaikan di server backend / env)
-const DEFAULT_TEACHER_CODE = 'GURU-CARBONOVA-2026'
 
 /**
  * Registrasi Pengguna Baru (Guru atau Siswa)
@@ -38,7 +36,7 @@ export async function register(
         }
       : payloadOrName
 
-  const { name, email, password, confirmPassword, role, invitationCode } = payload
+  const { name, email, password, confirmPassword } = payload
 
   // 1. Validasi Kelengkapan Field
   if (!name || !name.trim()) {
@@ -75,16 +73,23 @@ export async function register(
   let apiSucceeded = false
   if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
     try {
+      const sanitizedRole: UserRole = isTeacherAccount(cleanEmail) ? 'teacher' : 'student'
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          role: sanitizedRole,
+        }),
       })
       const data = await response.json()
       if (response.ok && data.success && data.user) {
         apiSucceeded = true
-        // Sinkronisasi data user dan sesi ke client
-        const safeUser: User = data.user
+        // Sinkronisasi data user dan sesi ke client (memastikan role terverifikasi)
+        const safeUser: User = {
+          ...data.user,
+          role: sanitizedRole,
+        }
         const session: AuthSession = {
           token: data.token || generateSessionToken(),
           user: safeUser,
@@ -123,34 +128,9 @@ export async function register(
     }
   }
 
-  // 7. Validasi Khusus Role Guru (Teacher) dengan Kode Undangan
-  let assignedRole: 'teacher' | 'student' = 'student'
-  if (role === 'teacher') {
-    const cleanCode = (invitationCode || '').trim()
-    if (!cleanCode) {
-      return {
-        success: false,
-        error: 'Kode undangan guru wajib diisi untuk registrasi akun tenaga pendidik.',
-      }
-    }
-
-    const globalObj = globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }
-    const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env
-    const expectedCode =
-      globalObj.process?.env?.TEACHER_INVITATION_CODE ||
-      metaEnv?.VITE_TEACHER_INVITATION_CODE ||
-      DEFAULT_TEACHER_CODE
-
-    if (cleanCode !== expectedCode) {
-      return {
-        success: false,
-        error: 'Kode undangan guru tidak valid. Hubungi pihak sekolah untuk mendapatkan kode resmi.',
-      }
-    }
-    assignedRole = 'teacher'
-  } else {
-    assignedRole = 'student'
-  }
+  // 7. Penegakan Hak Akses AD11-01: Pendaftaran umum SELALU mendapatkan role 'student'.
+  // Role 'teacher' hanya bisa didapatkan jika email cocok dengan konfigurasi whitelist guru resmi tepercaya.
+  const assignedRole: UserRole = isTeacherAccount(cleanEmail) ? 'teacher' : 'student'
 
   // 8. Hashing Kata Sandi Menggunakan PBKDF2 & Salt Kriptografis Unik
   const salt = generateSalt()
@@ -251,8 +231,14 @@ export async function login(
 
   const token = generateSessionToken()
   const { passwordHash: _, salt: __, ...safeUser } = storedUser
+  const verifiedRole: UserRole =
+    safeUser.role === 'teacher' && isTeacherAccount(safeUser.email, safeUser.id)
+      ? 'teacher'
+      : 'student'
+
   const safeUserWithLogin: User = {
     ...safeUser,
+    role: verifiedRole,
     lastLoginAt: new Date().toISOString(),
   }
 
@@ -299,9 +285,18 @@ export function getSession(): AuthSession | null {
       return null
     }
 
+    // Hak Akses AD11-01: Validasi whitelist akun guru tepercaya
+    const verifiedRole: UserRole =
+      freshUser.role === 'teacher' && isTeacherAccount(freshUser.email, freshUser.id)
+        ? 'teacher'
+        : 'student'
+
     return {
       ...session,
-      user: freshUser,
+      user: {
+        ...freshUser,
+        role: verifiedRole,
+      },
     }
   } catch (error) {
     console.error('Error parsing auth session:', error)

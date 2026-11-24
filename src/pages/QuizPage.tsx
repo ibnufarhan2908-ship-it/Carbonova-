@@ -10,6 +10,9 @@ import {
   History,
   BookOpen,
   Filter,
+  AlertTriangle,
+  Download,
+  FileText,
 } from 'lucide-react'
 import { QUIZ_QUESTIONS } from '../data/questions'
 import { useQuizHistory } from '../hooks/useQuizHistory'
@@ -54,6 +57,9 @@ export default function QuizPage() {
   const [_draft, setDraft] = useState<any>(null)
   const [detail, setDetail] = useState<QuizResult | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null)
+  const [pendingResult, setPendingResult] = useState<QuizResult | null>(null)
   const hasSavedRef = useRef(false)
   const prevUidRef = useRef<string | undefined>(undefined)
 
@@ -213,7 +219,6 @@ export default function QuizPage() {
   const handleSubmitQuiz = () => {
     if (hasSavedRef.current) return
     setIsSubmitted(true)
-    hasSavedRef.current = true
 
     const attemptId = `quiz_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
 
@@ -247,20 +252,112 @@ export default function QuizPage() {
       answers: answerRecords,
     }
 
-    saveResult(newResult)
+    // Penanganan AD11-03: Periksa hasil kembalian penyimpanan
+    const saveRes = saveResult(newResult)
 
-    // Hapus draf setelah berhasil submit
-    const targetUid = userUid || 'guest'
-    const quizId = selectedCategory.toLowerCase().replace(/\s+/g, '-')
-    clearQuizDraft(targetUid, selectedCategory, quizId, 'v1')
+    if (saveRes.success) {
+      hasSavedRef.current = true
+      setSaveStatus('success')
+      setSaveErrorMessage(null)
+      setPendingResult(null)
 
-    if (user) {
-      saveQuizSubmission({
-        ...newResult,
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-      })
+      // Hapus draf HANYA jika penyimpanan berhasil
+      const targetUid = userUid || 'guest'
+      const quizId = selectedCategory.toLowerCase().replace(/\s+/g, '-')
+      clearQuizDraft(targetUid, selectedCategory, quizId, 'v1')
+
+      if (user) {
+        saveQuizSubmission({
+          ...newResult,
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+        })
+      }
+    } else {
+      // Penanganan Error AD11-03: Gagal simpan
+      hasSavedRef.current = false
+      setSaveStatus('error')
+      setSaveErrorMessage(saveRes.error || 'Penyimpanan otomatis ke browser gagal.')
+      setPendingResult(newResult)
+      // Pertahankan draf jawaban siswa di form/localStorage draf
+    }
+  }
+
+  // Aksi Pemulihan AD11-03: Coba simpan ulang menggunakan ID percobaan yang sama
+  const handleRetrySave = () => {
+    if (!pendingResult) return
+    const retryRes = saveResult(pendingResult)
+    if (retryRes.success) {
+      hasSavedRef.current = true
+      setSaveStatus('success')
+      setSaveErrorMessage(null)
+
+      const targetUid = userUid || 'guest'
+      const quizId = selectedCategory.toLowerCase().replace(/\s+/g, '-')
+      clearQuizDraft(targetUid, selectedCategory, quizId, 'v1')
+
+      if (user) {
+        saveQuizSubmission({
+          ...pendingResult,
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+        })
+      }
+      setPendingResult(null)
+    } else {
+      setSaveStatus('error')
+      setSaveErrorMessage(retryRes.error || 'Penyimpanan ulang masih gagal. Silakan unduh hasil sebagai cadangan manual.')
+    }
+  }
+
+  // Aksi Pemulihan AD11-03: Ekspor/unduh hasil (JSON/Teks) sebagai cadangan manual
+  const handleDownloadResult = (format: 'json' | 'txt') => {
+    const resultToExport = pendingResult || (history.length > 0 ? history[0] : null)
+    if (!resultToExport) return
+
+    if (format === 'json') {
+      const exportData = JSON.stringify(resultToExport, null, 2)
+      const blob = new Blob([exportData], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `hasil-kuis-${selectedCategory.toLowerCase().replace(/\s+/g, '-')}-${resultToExport.id}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } else {
+      const textLines = [
+        `=== HASIL EVALUASI KIMIA CARBONOVA ===`,
+        `Topik / Kategori : ${resultToExport.category}`,
+        `Judul            : ${resultToExport.quizTitle}`,
+        `ID Pengerjaan    : ${resultToExport.id}`,
+        `Waktu Pengerjaan : ${new Date(resultToExport.completedAt).toLocaleString('id-ID')}`,
+        `Skor Akhir       : ${resultToExport.score}% (${resultToExport.correctAnswers}/${resultToExport.totalQuestions} Benar)`,
+        `Status           : ${resultToExport.score >= 70 ? 'LULUS KOMPETEN' : 'PERLU BELAJAR LAGI'}`,
+        ``,
+        `=== RINCIAN JAWABAN & PEMBAHASAN ===`,
+        ...resultToExport.answers.map((ans, idx) => [
+          `Soal ${idx + 1}: ${ans.questionText}`,
+          `Jawaban Anda     : ${ans.selectedAnswer} (${ans.isCorrect ? 'BENAR' : 'SALAH'})`,
+          `Kunci Jawaban    : ${ans.correctAnswer}`,
+          `Tingkat Penalaran: ${ans.reasoningLevel || '-'}`,
+          `Pembahasan       : ${ans.explanation}`,
+          `----------------------------------------`,
+        ].join('\n')),
+      ]
+      const exportText = textLines.join('\n')
+      const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `hasil-kuis-${selectedCategory.toLowerCase().replace(/\s+/g, '-')}-${resultToExport.id}.txt`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
     }
   }
 
@@ -275,6 +372,9 @@ export default function QuizPage() {
     setIsSubmitted(false)
     setCurrentQuestionIndex(0)
     hasSavedRef.current = false
+    setSaveStatus('idle')
+    setSaveErrorMessage(null)
+    setPendingResult(null)
   }
 
   const handleSwitchCategory = (cat: string) => {
@@ -409,19 +509,88 @@ export default function QuizPage() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between text-xs text-slate-200">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#5DE0E6]" />
-                  Hasil pengerjaan otomatis tersimpan di localStorage browser Anda.
-                </span>
-                <Link
-                  to="/materi"
-                  className="font-bold underline hover:text-[#5DE0E6] inline-flex items-center gap-1"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Pelajari Materi Terkait
-                </Link>
-              </div>
+              {/* Status Penyimpanan Hasil (AD11-03) */}
+              {saveStatus === 'success' && (
+                <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between text-xs text-slate-200">
+                  <span className="flex items-center gap-1.5 text-teal-200">
+                    <CheckCircle2 className="w-4 h-4 text-[#5DE0E6]" />
+                    Hasil pengerjaan otomatis tersimpan di localStorage browser Anda.
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadResult('json')}
+                      className="hover:text-[#5DE0E6] underline inline-flex items-center gap-1 cursor-pointer"
+                      title="Unduh cadangan data kuis"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Ekspor Hasil (JSON)
+                    </button>
+                    <Link
+                      to="/materi"
+                      className="font-bold underline hover:text-[#5DE0E6] inline-flex items-center gap-1"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      Pelajari Materi Terkait
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {saveStatus === 'error' && (
+                <div className="pt-4 border-t border-white/15 space-y-3">
+                  <div className="p-3.5 rounded-2xl bg-amber-500/20 border border-amber-300/40 text-amber-100 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
+                    <div className="space-y-1 flex-1">
+                      <p className="text-xs font-bold text-amber-200">
+                        Penyimpanan Otomatis ke Browser Gagal
+                      </p>
+                      <p className="text-[11px] text-amber-100/90 leading-relaxed">
+                        {saveErrorMessage || 'Kapasitas penyimpanan lokal browser penuh atau akses diblokir.'} Skor akhir dan pembahasan soal di bawah tetap dapat Anda pelajari. Draf jawaban Anda dipertahankan.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRetrySave}
+                        className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#101C3A] text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Coba Simpan Ulang (Retry)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadResult('json')}
+                        className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors border border-white/20 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5 text-[#5DE0E6]" />
+                        Ekspor Hasil (JSON)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadResult('txt')}
+                        className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors border border-white/20 cursor-pointer"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#5DE0E6]" />
+                        Unduh Laporan (Teks)
+                      </button>
+                    </div>
+
+                    <Link
+                      to="/materi"
+                      className="text-xs font-bold underline hover:text-[#5DE0E6] inline-flex items-center gap-1 text-slate-200"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      Pelajari Materi Terkait
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

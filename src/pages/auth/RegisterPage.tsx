@@ -7,26 +7,20 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Key,
   ArrowRight,
   AlertCircle,
   ShieldCheck,
-  GraduationCap,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import type { UserRole } from '../../types/auth'
-
 export default function RegisterPage() {
   const navigate = useNavigate()
   const { register } = useAuth()
 
-  // State Form
-  const [selectedRole, setSelectedRole] = useState<UserRole>('student')
+  // Hak Akses AD11-01: Form registrasi publik hanya untuk akun Siswa ('student')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [invitationCode, setInvitationCode] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -36,7 +30,6 @@ export default function RegisterPage() {
     email?: string
     password?: string
     confirmPassword?: string
-    invitationCode?: string
   }>({})
   const [authError, setAuthError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -76,10 +69,6 @@ export default function RegisterPage() {
       errors.confirmPassword = 'Konfirmasi kata sandi tidak cocok.'
     }
 
-    if (selectedRole === 'teacher' && !invitationCode.trim()) {
-      errors.invitationCode = 'Kode undangan guru wajib diisi untuk verifikasi pengajar.'
-    }
-
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -97,17 +86,11 @@ export default function RegisterPage() {
         email: email.trim().toLowerCase(),
         password,
         confirmPassword,
-        role: selectedRole,
-        invitationCode: selectedRole === 'teacher' ? invitationCode.trim() : undefined,
+        role: 'student',
       })
 
       if (result.success) {
-        // Redirect ke dashboard sesuai role yang baru terdaftar
-        if (selectedRole === 'teacher') {
-          navigate('/guru/dashboard', { replace: true })
-        } else {
-          navigate('/siswa/dashboard', { replace: true })
-        }
+        navigate('/siswa/dashboard', { replace: true })
       } else {
         setAuthError(result.error || 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.')
       }
@@ -161,77 +144,10 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-5">
-            <h2 className="text-lg font-bold text-[#101C3A]">Pilih Jenis Akun</h2>
+            <h2 className="text-lg font-bold text-[#101C3A]">Pendaftaran Akun Siswa</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Tentukan peran Anda di sistem pembelajaran Carbonova:
+              Lengkapi formulir di bawah ini untuk mengakses modul pembelajaran dan kuis:
             </p>
-          </div>
-
-          {/* Role Selector Tabs (Siswa vs Guru) */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedRole('student')
-                setAuthError(null)
-                setValidationErrors({})
-              }}
-              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                selectedRole === 'student'
-                  ? 'border-[#1DAA9A] bg-teal-50/70 ring-2 ring-teal-200 shadow-xs'
-                  : 'border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <GraduationCap
-                  className={`w-4 h-4 ${
-                    selectedRole === 'student' ? 'text-teal-700' : 'text-slate-400'
-                  }`}
-                />
-                <span
-                  className={`text-xs font-bold ${
-                    selectedRole === 'student' ? 'text-teal-900' : 'text-slate-700'
-                  }`}
-                >
-                  Siswa
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-snug">
-                Materi, lab virtual & latihan soal
-              </p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedRole('teacher')
-                setAuthError(null)
-                setValidationErrors({})
-              }}
-              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                selectedRole === 'teacher'
-                  ? 'border-[#101C3A] bg-slate-50 ring-2 ring-slate-300 shadow-xs'
-                  : 'border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck
-                  className={`w-4 h-4 ${
-                    selectedRole === 'teacher' ? 'text-[#101C3A]' : 'text-slate-400'
-                  }`}
-                />
-                <span
-                  className={`text-xs font-bold ${
-                    selectedRole === 'teacher' ? 'text-[#101C3A]' : 'text-slate-700'
-                  }`}
-                >
-                  Guru
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-snug">
-                Dashboard & pemantauan siswa
-              </p>
-            </button>
           </div>
 
           {/* Alert Error Box */}
@@ -397,50 +313,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Input Khusus Role Guru: Kode Undangan Guru */}
-            {selectedRole === 'teacher' && (
-              <div className="pt-1">
-                <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="reg-code" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Kode Undangan Guru
-                  </label>
-                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                    Wajib untuk Guru
-                  </span>
-                </div>
-                <div className="relative rounded-xl shadow-xs">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Key className="w-4.5 h-4.5 text-amber-600" />
-                  </div>
-                  <input
-                    id="reg-code"
-                    type="text"
-                    value={invitationCode}
-                    onChange={(e) => {
-                      setInvitationCode(e.target.value)
-                      if (validationErrors.invitationCode) {
-                        setValidationErrors((prev) => ({ ...prev, invitationCode: undefined }))
-                      }
-                    }}
-                    placeholder="Masukkan kode undangan resmi guru"
-                    className={`block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border bg-amber-50/30 text-[#101C3A] placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
-                      validationErrors.invitationCode
-                        ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-200'
-                        : 'border-amber-200 focus:border-amber-500 focus:ring-amber-100'
-                    }`}
-                  />
-                </div>
-                {validationErrors.invitationCode ? (
-                  <p className="text-xs font-medium text-rose-600 mt-1">
-                    • {validationErrors.invitationCode}
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Dapatkan kode verifikasi resmi dari administrator sekolah / tim kurikulum.
-                  </p>
-                )}
-              </div>
-            )}
 
             {/* Tombol Submit Registrasi */}
             <div className="pt-3">
@@ -456,9 +328,7 @@ export default function RegisterPage() {
                   </>
                 ) : (
                   <>
-                    <span>
-                      {selectedRole === 'teacher' ? 'Daftar sebagai Guru' : 'Daftar sebagai Siswa'}
-                    </span>
+                    <span>Daftar sebagai Siswa</span>
                     <ArrowRight className="w-4 h-4 text-[#5DE0E6]" />
                   </>
                 )}

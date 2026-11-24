@@ -32,7 +32,7 @@ async function runRegistrationTests() {
   }
 
   const { register, login, logout, getSession } = await import('./src/services/auth.ts')
-  const { initDatabase, getAllUsers, getStudents, getStoredUserByEmail } = await import('./src/services/db.ts')
+  const { initDatabase, getStudents, getStoredUserByEmail } = await import('./src/services/db.ts')
 
   await initDatabase()
 
@@ -55,50 +55,38 @@ async function runRegistrationTests() {
   assert(storedStudent?.passwordHash !== 'Password123!', 'Password siswa TIDAK disimpan dalam bentuk plaintext')
   assert(storedStudent?.passwordHash.length === 64, 'Password siswa di-hash dengan PBKDF2-SHA256 256-bit')
 
-  // --- 2. PENGUJIAN REGISTRASI GURU DENGAN KODE UNDANGAN VALID ---
-  console.log('\n--- 2. Pengujian Registrasi Guru dengan Kode Undangan Valid ---')
+  // --- 2. PENGUJIAN PENOLAKAN ESKALASI ROLE SAAT REGISTRASI MANDIRI (AD11-01) ---
+  console.log('\n--- 2. Pengujian Penolakan Eskalasi Role Guru saat Registrasi Mandiri (AD11-01) ---')
   const resTeacher = await register({
     name: 'Ibu Ratna Dewi, M.Pd.',
     email: 'ratna.dewi@sekolah.sch.id',
     password: 'GuruPassword2026!',
     confirmPassword: 'GuruPassword2026!',
     role: 'teacher',
-    invitationCode: 'GURU-CARBONOVA-2026'
   })
-  assert(resTeacher.success === true, 'Guru baru berhasil mendaftar dengan kode undangan valid')
-  assert(resTeacher.user?.role === 'teacher', 'Role akun guru otomatis ditetapkan sebagai "teacher"')
-  assert(resTeacher.user?.name === 'Ibu Ratna Dewi, M.Pd.', 'Nama guru tersimpan sesuai formulir')
+  assert(resTeacher.success === true, 'Pendaftaran akun mandiri berhasil diproses')
+  assert(resTeacher.user?.role === 'student', 'Role akun publik otomatis dipaksa menjadi "student" (tidak bisa teacher)')
+  assert(resTeacher.user?.name === 'Ibu Ratna Dewi, M.Pd.', 'Nama pendaftar tersimpan sesuai formulir')
 
-  // Verifikasi guru di DB
+  // Verifikasi di DB
   const storedTeacher = getStoredUserByEmail('ratna.dewi@sekolah.sch.id')
-  assert(storedTeacher !== undefined, 'Akun guru baru benar-benar tersimpan di database')
-  assert(storedTeacher?.role === 'teacher', 'Role guru terkonfirmasi "teacher" di database')
+  assert(storedTeacher !== undefined, 'Akun pendaftar baru tersimpan di database')
+  assert(storedTeacher?.role === 'student', 'Role di database dipaksa "student" untuk mencegah privilege escalation')
 
-  // --- 3. PENGUJIAN REGISTRASI GURU DENGAN KODE UNDANGAN SALAH / KOSONG ---
-  console.log('\n--- 3. Pengujian Penolakan Registrasi Guru (Kode Salah/Kosong) ---')
-  const resTeacherWrongCode = await register({
-    name: 'Penyusup Guru',
-    email: 'fake.guru@sekolah.sch.id',
+  // --- 3. PENGUJIAN WHITELIST AKUN GURU TEPERCAYA TUNGGAL (AD11-01) ---
+  console.log('\n--- 3. Pengujian Whitelist Akun Guru Tepercaya Tunggal (AD11-01) ---')
+  const resTeacherWrong = await register({
+    name: 'Penyusup Mengaku Guru',
+    email: 'guru.palsu@sekolah.sch.id',
     password: 'Password123!',
     confirmPassword: 'Password123!',
     role: 'teacher',
-    invitationCode: 'KODE-PALSU-999'
   })
-  assert(resTeacherWrongCode.success === false, 'Registrasi guru DITOLAK jika kode undangan salah')
-  assert(resTeacherWrongCode.error?.includes('tidak valid'), 'Pesan error eksplisit ditampilkan saat kode salah')
+  assert(resTeacherWrong.success === true, 'Pendaftaran akun penyusup tetap dicatat sebagai student biasa')
+  assert(resTeacherWrong.user?.role === 'student', 'Akun penyusup DITOLAK menjadi teacher dan dipaksa role "student"')
 
-  const resTeacherEmptyCode = await register({
-    name: 'Guru Tanpa Kode',
-    email: 'nocode.guru@sekolah.sch.id',
-    password: 'Password123!',
-    confirmPassword: 'Password123!',
-    role: 'teacher',
-    invitationCode: ''
-  })
-  assert(resTeacherEmptyCode.success === false, 'Registrasi guru DITOLAK jika kode undangan kosong')
-
-  // Pastikan akun palsu TIDAK tersimpan
-  assert(getStoredUserByEmail('fake.guru@sekolah.sch.id') === undefined, 'Akun guru dengan kode salah TIDAK tersimpan di DB')
+  const storedPenyusup = getStoredUserByEmail('guru.palsu@sekolah.sch.id')
+  assert(storedPenyusup?.role === 'student', 'Role penyusup di DB terkonfirmasi "student"')
 
   // --- 4. PENGUJIAN DUPLIKAT EMAIL ---
   console.log('\n--- 4. Pengujian Pencegahan Email Duplikat ---')
@@ -165,11 +153,11 @@ async function runRegistrationTests() {
 
   logout()
 
-  // Login Guru Baru
+  // Login Pendaftar Mandiri
   const loginTeacher = await login('ratna.dewi@sekolah.sch.id', 'GuruPassword2026!')
-  assert(loginTeacher.success === true, 'Guru baru berhasil login menggunakan kredensial pendaftaran')
-  assert(loginTeacher.user?.email === 'ratna.dewi@sekolah.sch.id', 'Email sesi login cocok dengan guru baru')
-  assert(loginTeacher.user?.role === 'teacher', 'Role sesi login guru baru adalah "teacher"')
+  assert(loginTeacher.success === true, 'Pendaftar mandiri berhasil login menggunakan kredensial pendaftaran')
+  assert(loginTeacher.user?.email === 'ratna.dewi@sekolah.sch.id', 'Email sesi login cocok dengan pendaftar')
+  assert(loginTeacher.user?.role === 'student', 'Role sesi login akun pendaftar umum tetap "student" (bukan teacher)')
 
   // --- 7. PENGUJIAN KEDUA AKUN DEMO TETAP AKTIF ---
   console.log('\n--- 7. Pengujian Kompatibilitas Akun Demo Tetap Dapat Digunakan ---')

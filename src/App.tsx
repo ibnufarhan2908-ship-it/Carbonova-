@@ -13,6 +13,7 @@ import TeacherDashboardPage from './pages/teacher/TeacherDashboardPage'
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import PublicRoute from './components/auth/PublicRoute'
+import { isTeacherAccount } from './config/authConfig'
 
 function RootRedirect() {
   const { isAuthenticated, user, isLoading } = useAuth()
@@ -29,7 +30,7 @@ function RootRedirect() {
     return <Navigate to="/login" replace />
   }
 
-  if (user.role === 'teacher') {
+  if (user.role === 'teacher' && isTeacherAccount(user.email, user.id)) {
     return <Navigate to="/guru/dashboard" replace />
   }
 
