@@ -9,9 +9,7 @@ import {
   ArrowRight,
   AlertCircle,
   ShieldCheck,
-  UserCheck,
   GraduationCap,
-  Sparkles,
   User,
   UserPlus,
   Cloud,
@@ -74,15 +72,9 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // Autofill credential demo
-  const fillCredentials = (demoEmail: string, demoPass: string) => {
-    setMode('login')
-    setEmail(demoEmail)
-    setPassword(demoPass)
-    setValidationErrors({})
-    setAuthError(null)
-    setAuthSuccess(null)
-  }
+  // Notifikasi dari pengalihan akses fitur terkunci (misal: Latihan Soal / Riwayat Kuis)
+  const stateNotice = (location.state as { message?: string })?.message
+  const [authNotice] = useState<string | null>(stateNotice || null)
 
   const validateForm = (): boolean => {
     const errors: {
@@ -301,6 +293,17 @@ export default function LoginPage() {
                   {mode === 'login' ? 'Autentikasi Gagal' : 'Pendaftaran Gagal'}
                 </p>
                 <p className="text-xs text-rose-700 mt-0.5">{authError}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Banner Peringatan: Akses Fitur Terkunci (Latihan Soal / Riwayat) */}
+          {authNotice && (
+            <div className="mb-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 shadow-2xs animate-in fade-in duration-200">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-amber-900">Akses Masuk Diperlukan</p>
+                <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">{authNotice}</p>
               </div>
             </div>
           )}
@@ -605,75 +608,10 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {/* Section Akun Demo Sesuai Spesifikasi */}
-          <div className="mt-8 pt-6 border-t border-slate-100 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#1DAA9A]" />
-                Akun Demo Terdaftar
-              </span>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                {isFirebaseActive ? 'Sinkron Cloud Firebase' : 'Mode Lokal'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* Tombol Demo Guru */}
-              <button
-                type="button"
-                onClick={() => fillCredentials('guru.demo@carbonova.test', 'GuruDemo123!')}
-                className="p-3 text-left rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-teal-50/60 hover:border-teal-300 transition-all group focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <UserCheck className="w-4 h-4 text-[#1DAA9A]" />
-                    <span className="text-xs font-bold text-[#101C3A] group-hover:text-teal-900">
-                      Guru Demo
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">
-                    Teacher
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-mono truncate">
-                  guru.demo@carbonova.test
-                </p>
-                <span className="inline-block mt-1 text-[10px] font-semibold text-teal-700 group-hover:underline">
-                  Isi Formulir Guru →
-                </span>
-              </button>
-
-              {/* Tombol Demo Siswa */}
-              <button
-                type="button"
-                onClick={() => fillCredentials('siswa.demo@carbonova.test', 'SiswaDemo123!')}
-                className="p-3 text-left rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-cyan-50/60 hover:border-cyan-300 transition-all group focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <GraduationCap className="w-4 h-4 text-[#101C3A]" />
-                    <span className="text-xs font-bold text-[#101C3A] group-hover:text-cyan-900">
-                      Siswa Demo
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800">
-                    Student
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-mono truncate">
-                  siswa.demo@carbonova.test
-                </p>
-                <span className="inline-block mt-1 text-[10px] font-semibold text-cyan-700 group-hover:underline">
-                  Isi Formulir Siswa →
-                </span>
-              </button>
-            </div>
-
-            {/* Catatan Keamanan */}
-            <div className="pt-2 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#1DAA9A]" />
-              <span>Autentikasi terenkripsi PBKDF2-HMAC-SHA256 & Cloud Firestore</span>
-            </div>
+          {/* Catatan Keamanan */}
+          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#1DAA9A]" />
+            <span>Autentikasi terenkripsi & Cloud Firestore</span>
           </div>
         </div>
       </div>

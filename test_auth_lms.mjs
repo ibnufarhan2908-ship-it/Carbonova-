@@ -57,32 +57,41 @@ async function runTests() {
   const verifyInvalid = await verifyPassword('SalahPassword!', salt1, hashGuru)
   assert(verifyInvalid === false, 'verifyPassword menolak password yang salah')
 
-  // --- 2. PENGUJIAN INISIALISASI DATABASE & SEEDING AKUN DEMO ---
-  console.log('\n--- 2. Pengujian Database & Seeding Akun Demo ---')
-  const { initDatabase, getAllUsers, getStoredUserByEmail } = await import('./src/services/db.ts')
+  // --- 2. PENGUJIAN DATABASE & AKUN GURU RESMI TUNGGAL ---
+  console.log('\n--- 2. Pengujian Database & Akun Guru Resmi Tunggal ---')
+  const { initDatabase, getStoredUserByEmail } = await import('./src/services/db.ts')
+  const { getTrustedTeacherEmail } = await import('./src/config/authConfig.ts')
 
   await initDatabase()
-  const users = getAllUsers()
-  assert(users.length >= 2, 'Database berhasil menginisialisasi setidaknya 2 pengguna')
+  const teacherEmail = getTrustedTeacherEmail()
+  const teacher = getStoredUserByEmail(teacherEmail)
+  assert(teacher !== undefined, `Akun Guru Resmi (${teacherEmail}) terdaftar di DB`)
+  assert(teacher?.role === 'teacher', 'Akun Guru Resmi memiliki role "teacher"')
 
-  const teacher = getStoredUserByEmail('guru.demo@carbonova.test')
-  assert(teacher !== undefined, 'Akun Guru Demo (guru.demo@carbonova.test) terdaftar di DB')
-  assert(teacher?.role === 'teacher', 'Akun Guru Demo memiliki role "teacher"')
-  assert(teacher?.passwordHash !== 'GuruDemo123!', 'Password Guru Demo tersimpan dalam bentuk PBKDF2 hash aman')
-
-  const student = getStoredUserByEmail('siswa.demo@carbonova.test')
-  assert(student !== undefined, 'Akun Siswa Demo (siswa.demo@carbonova.test) terdaftar di DB')
-  assert(student?.role === 'student', 'Akun Siswa Demo memiliki role "student"')
-  assert(student?.passwordHash !== 'SiswaDemo123!', 'Password Siswa Demo tersimpan dalam bentuk PBKDF2 hash aman')
+  // Verifikasi akun demo lama telah dibersihkan
+  const demoTeacher = getStoredUserByEmail('guru.demo@carbonova.test')
+  const demoStudent = getStoredUserByEmail('siswa.demo@carbonova.test')
+  assert(demoTeacher === undefined, 'Akun Guru Demo telah dihapus dari DB')
+  assert(demoStudent === undefined, 'Akun Siswa Demo telah dihapus dari DB')
 
   // --- 3. PENGUJIAN LOGIN AUTENTIKASI ---
   console.log('\n--- 3. Pengujian Alur Login Autentikasi ---')
-  const { login, logout, getSession, getCurrentUser } = await import('./src/services/auth.ts')
+  const { login, logout, register, getSession, getCurrentUser } = await import('./src/services/auth.ts')
 
-  // Login Guru Demo Berhasil
-  const loginGuru = await login('guru.demo@carbonova.test', 'GuruDemo123!')
-  assert(loginGuru.success === true, 'Guru Demo berhasil login dengan kredensial yang valid')
-  assert(loginGuru.user?.role === 'teacher', 'Sesi login Guru Demo mengembalikan role "teacher"')
+  // Daftarkan 1 akun siswa asli untuk pengujian LMS
+  const regStudentRes = await register({
+    name: 'Siswa Uji LMS',
+    email: 'siswa.uji@sekolah.sch.id',
+    password: 'SiswaPassword123!',
+    confirmPassword: 'SiswaPassword123!',
+    role: 'student',
+  })
+  assert(regStudentRes.success === true, 'Siswa uji berhasil didaftarkan')
+
+  // Login Guru Resmi Berhasil
+  const loginGuru = await login(teacherEmail, 'GuruCarbonova2026!')
+  assert(loginGuru.success === true, 'Guru Resmi berhasil login dengan kredensial yang valid')
+  assert(loginGuru.user?.role === 'teacher', 'Sesi login Guru Resmi mengembalikan role "teacher"')
   assert(getSession()?.token !== undefined, 'Sesi autentikasi tersimpan dengan token aktif')
 
   // Logout Guru
@@ -90,18 +99,18 @@ async function runTests() {
   assert(getSession() === null, 'Logout berhasil membersihkan sesi login')
   assert(getCurrentUser() === null, 'getCurrentUser mengembalikan null setelah logout')
 
-  // Login Siswa Demo Berhasil
-  const loginSiswa = await login('siswa.demo@carbonova.test', 'SiswaDemo123!')
-  assert(loginSiswa.success === true, 'Siswa Demo berhasil login dengan kredensial yang valid')
-  assert(loginSiswa.user?.role === 'student', 'Sesi login Siswa Demo mengembalikan role "student"')
+  // Login Siswa Berhasil
+  const loginSiswa = await login('siswa.uji@sekolah.sch.id', 'SiswaPassword123!')
+  assert(loginSiswa.success === true, 'Siswa berhasil login dengan kredensial yang valid')
+  assert(loginSiswa.user?.role === 'student', 'Sesi login Siswa mengembalikan role "student"')
 
   // Login dengan Password Salah Ditolak
-  const loginWrongPass = await login('guru.demo@carbonova.test', 'PasswordSalah!')
+  const loginWrongPass = await login(teacherEmail, 'PasswordSalah!')
   assert(loginWrongPass.success === false, 'Login dengan password salah ditolak oleh sistem')
   assert(loginWrongPass.error?.includes('tidak sesuai'), 'Pesan error ditampilkan apabila password salah')
 
   // Login dengan Email Tidak Terdaftar Ditolak
-  const loginWrongEmail = await login('unknown@carbonova.test', 'GuruDemo123!')
+  const loginWrongEmail = await login('unknown@carbonova.test', 'GuruCarbonova2026!')
   assert(loginWrongEmail.success === false, 'Login dengan email yang tidak terdaftar ditolak')
 
   // --- 4. PENGUJIAN ROLE-BASED ACCESS CONTROL (RBAC) ---
@@ -148,7 +157,7 @@ async function runTests() {
 
   // Kondisi awal (sebelum pengerjaan)
   const initialTeacherStats = getTeacherStats()
-  assert(initialTeacherStats.totalStudents === 1, 'Statistik guru: total siswa terdaftar terhitung akurat (1 siswa demo)')
+  assert(initialTeacherStats.totalStudents === 1, 'Statistik guru: total siswa terdaftar terhitung akurat (1 siswa asli)')
   assert(initialTeacherStats.totalMaterials === 6, 'Statistik guru: total materi terhitung 6 modul')
   assert(initialTeacherStats.totalQuestions === 14, 'Statistik guru: total latihan soal terhitung 14 butir evaluasi HOTS riil')
   assert(initialTeacherStats.totalSubmissions === 0, 'Statistik guru: jumlah pengerjaan awal = 0 (bukan data palsu)')

@@ -6,11 +6,8 @@
  * role 'teacher' dan mengakses dashboard atau rekap data siswa.
  */
 
-// Email guru resmi default untuk Carbonova
-export const DEFAULT_TEACHER_EMAIL = 'guru.demo@carbonova.test'
-
-// UID guru tepercaya (lokal demo & Firebase demo)
-export const TRUSTED_TEACHER_UIDS = ['usr-teacher-01', 'demo-guru-carbonova']
+// Email guru resmi default untuk Carbonova jika environment variable belum diatur
+export const DEFAULT_TEACHER_EMAIL = 'guru@carbonova.com'
 
 /**
  * Mendapatkan email guru resmi dari environment variable (Vite / Node.js) atau default whitelist
@@ -43,7 +40,7 @@ export function getTrustedTeacherEmail(): string {
 }
 
 /**
- * Memeriksa apakah suatu alamat email adalah email guru tepercaya
+ * Memeriksa apakah suatu alamat email adalah email guru tepercaya tunggal
  */
 export function isTeacherEmail(email?: string | null): boolean {
   if (!email || typeof email !== 'string') return false
@@ -53,14 +50,13 @@ export function isTeacherEmail(email?: string | null): boolean {
 
 /**
  * Memeriksa apakah akun pengguna (berdasarkan email dan/atau UID) berhak atas role 'teacher'
+ * Hanya email yang cocok persis dengan email guru tepercaya yang diakui
  */
 export function isTeacherAccount(email?: string | null, uid?: string | null): boolean {
   if (isTeacherEmail(email)) return true
 
   if (uid && typeof uid === 'string') {
     const cleanUid = uid.trim()
-    if (TRUSTED_TEACHER_UIDS.includes(cleanUid)) return true
-
     try {
       const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env
       if (metaEnv?.VITE_TEACHER_UID && cleanUid === metaEnv.VITE_TEACHER_UID.trim()) {

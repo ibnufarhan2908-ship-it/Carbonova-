@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useSearchParams, useLocation, Link } from 'react-router-dom'
+import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom'
 import {
   GraduationCap,
   CheckCircle2,
@@ -31,6 +31,7 @@ import { formatChemicalText } from '../components/ChemicalFormula'
 export default function QuizPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const isHistoryRoute = location.pathname === '/riwayat' || searchParams.get('tab') === 'riwayat'
   const activeTab: 'kuis' | 'riwayat' = isHistoryRoute ? 'riwayat' : 'kuis'
 
@@ -218,6 +219,19 @@ export default function QuizPage() {
   // Submit quiz and automatically save to localStorage history
   const handleSubmitQuiz = () => {
     if (hasSavedRef.current) return
+
+    // Guard: Pengguna umum wajib login sebelum mengirimkan jawaban
+    if (!user || !userUid) {
+      navigate('/login', {
+        state: {
+          from: location.pathname,
+          message:
+            'Silakan masuk (login) terlebih dahulu menggunakan akun siswa untuk mengerjakan dan mengirimkan jawaban latihan soal.',
+        },
+      })
+      return
+    }
+
     setIsSubmitted(true)
 
     const attemptId = `quiz_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`

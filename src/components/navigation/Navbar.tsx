@@ -18,10 +18,13 @@ import {
 } from 'lucide-react'
 import { LESSON_MODULES } from '../../data/lessons'
 import { useAuth } from '../../context/AuthContext'
+import LoginRequiredModal from '../auth/LoginRequiredModal'
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [materiDropdownOpen, setMateriDropdownOpen] = useState(false)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [loginModalRedirectPath, setLoginModalRedirectPath] = useState('/latihan')
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout } = useAuth()
@@ -34,7 +37,7 @@ export default function Navbar() {
 
   const isActive = (path: string) => {
     if (path === '/beranda') {
-      return location.pathname === '/beranda'
+      return location.pathname === '/beranda' || location.pathname === '/'
     }
     return location.pathname.startsWith(path)
   }
@@ -42,6 +45,16 @@ export default function Navbar() {
   const handleLogout = () => {
     logout()
     navigate('/login', { replace: true })
+  }
+
+  // Intersep klik menu kuis jika pengguna belum login
+  const handleQuizNavClick = (e: React.MouseEvent, path: string) => {
+    if (!isAuthenticated && (path === '/latihan' || path === '/riwayat')) {
+      e.preventDefault()
+      setLoginModalRedirectPath(path)
+      setIsLoginModalOpen(true)
+      setMobileMenuOpen(false)
+    }
   }
 
   const navLinks: {
@@ -69,7 +82,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-18">
           {/* Logo Brand */}
           <Link
-            to={isAuthenticated ? dashboardPath : '/login'}
+            to={isAuthenticated ? dashboardPath : '/'}
             className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-xl p-1"
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#101C3A] via-[#152a57] to-[#1DAA9A] p-[2px] shadow-sm group-hover:shadow-md transition-shadow">
@@ -171,6 +184,7 @@ export default function Navbar() {
                   key={link.path}
                   to={link.path}
                   data-tour={link.dataTour}
+                  onClick={(e) => handleQuizNavClick(e, link.path)}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                     active
                       ? 'text-[#101C3A] bg-slate-100/90 font-bold'
@@ -232,7 +246,7 @@ export default function Navbar() {
                 className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-white text-xs font-bold shadow-sm hover:shadow transition-all"
               >
                 <LogIn className="w-3.5 h-3.5 text-[#5DE0E6]" />
-                <span>Masuk</span>
+                <span>Masuk / Daftar</span>
               </Link>
             )}
 
@@ -292,6 +306,7 @@ export default function Navbar() {
                   key={link.path}
                   to={link.path}
                   data-tour={link.dataTour}
+                  onClick={(e) => handleQuizNavClick(e, link.path)}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                     active
                       ? 'bg-teal-50 text-[#1DAA9A] font-bold'
@@ -320,12 +335,19 @@ export default function Navbar() {
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#101C3A] text-white text-sm font-bold shadow-sm"
               >
                 <LogIn className="w-4 h-4 text-[#5DE0E6]" />
-                <span>Masuk ke Akun</span>
+                <span>Masuk / Daftar</span>
               </Link>
             )}
           </div>
         </div>
       )}
+
+      {/* Modal Notifikasi Akses Masuk Diperlukan untuk Latihan Soal & Riwayat */}
+      <LoginRequiredModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectPath={loginModalRedirectPath}
+      />
     </header>
   )
 }

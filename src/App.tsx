@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider } from './context/AuthContext'
 import MainLayout from './components/layout/MainLayout'
 import HomePage from './pages/HomePage'
 import MaterialsPage from './pages/MaterialsPage'
@@ -13,36 +13,13 @@ import TeacherDashboardPage from './pages/teacher/TeacherDashboardPage'
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import PublicRoute from './components/auth/PublicRoute'
-import { isTeacherAccount } from './config/authConfig'
-
-function RootRedirect() {
-  const { isAuthenticated, user, isLoading } = useAuth()
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FB]">
-        <div className="w-8 h-8 border-3 border-[#101C3A] border-t-[#1DAA9A] rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (user.role === 'teacher' && isTeacherAccount(user.email, user.id)) {
-    return <Navigate to="/guru/dashboard" replace />
-  }
-
-  return <Navigate to="/siswa/dashboard" replace />
-}
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Route Login - Halaman pertama ketika website dibuka jika belum login */}
+          {/* Public Route Login */}
           <Route
             path="/login"
             element={
@@ -52,7 +29,7 @@ export default function App() {
             }
           />
 
-          {/* Public Route Register - Pendaftaran akun baru Guru dan Siswa */}
+          {/* Public Route Register */}
           <Route
             path="/register"
             element={
@@ -62,12 +39,43 @@ export default function App() {
             }
           />
 
-          {/* Internal Protected Routes wrapped in MainLayout */}
+          {/* Internal Routes wrapped in MainLayout */}
           <Route element={<MainLayout />}>
-            {/* Root Route: Redirects unauthenticated to /login, or authenticated to role dashboard */}
-            <Route index element={<RootRedirect />} />
+            {/* 1. Akses Bebas Pengguna Umum (Beranda, Materi, Molekul, Lab, Tentang) */}
+            <Route index element={<HomePage />} />
+            <Route path="beranda" element={<HomePage />} />
+            <Route path="materi" element={<MaterialsPage />} />
+            <Route path="molekul" element={<MoleculeExplorerPage />} />
+            <Route path="lab" element={<CarbonLabPage />} />
+            <Route path="tentang" element={<AboutPage />} />
 
-            {/* Dashboard Guru (Akses Terbatas: Hanya Role Teacher) */}
+            {/* 2. Rute Terkunci Khusus Siswa/Guru Terautentikasi (Latihan Soal & Riwayat) */}
+            <Route
+              path="latihan"
+              element={
+                <ProtectedRoute>
+                  <QuizPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="latihan-soal"
+              element={
+                <ProtectedRoute>
+                  <QuizPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="riwayat"
+              element={
+                <ProtectedRoute>
+                  <QuizPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 3. Dashboard Guru (Akses Eksklusif Role Teacher) */}
             <Route
               path="guru/dashboard"
               element={
@@ -94,7 +102,7 @@ export default function App() {
             />
             <Route path="guru" element={<Navigate to="/guru/dashboard" replace />} />
 
-            {/* Dashboard Siswa (Akses Terbatas: Hanya Role Student) */}
+            {/* 4. Dashboard Siswa (Akses Khusus Role Student) */}
             <Route
               path="siswa/dashboard"
               element={
@@ -104,68 +112,10 @@ export default function App() {
               }
             />
             <Route path="siswa" element={<Navigate to="/siswa/dashboard" replace />} />
-
-            {/* Fitur Pembelajaran Internal Terproteksi (Guru & Siswa Terautentikasi) */}
-            <Route
-              path="beranda"
-              element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="materi"
-              element={
-                <ProtectedRoute>
-                  <MaterialsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="molekul"
-              element={
-                <ProtectedRoute>
-                  <MoleculeExplorerPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="lab"
-              element={
-                <ProtectedRoute>
-                  <CarbonLabPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="latihan"
-              element={
-                <ProtectedRoute>
-                  <QuizPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="riwayat"
-              element={
-                <ProtectedRoute>
-                  <QuizPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="tentang"
-              element={
-                <ProtectedRoute>
-                  <AboutPage />
-                </ProtectedRoute>
-              }
-            />
           </Route>
 
-          {/* Catch-all redirect to RootRedirect */}
-          <Route path="*" element={<RootRedirect />} />
+          {/* Fallback rute tidak dikenal diarahkan kembali ke Beranda */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

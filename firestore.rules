@@ -14,12 +14,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // AD11-01: Verifikasi Akun Guru Resmi Tepercaya (Whitelist Tunggal)
+    // AD11-01 / AD11-07: Verifikasi Akun Guru Resmi Tepercaya (Whitelist Tunggal)
     function isTrustedTeacher() {
       return isSignedIn() && (
-        request.auth.token.email == 'guru.demo@carbonova.test' ||
-        request.auth.uid == 'usr-teacher-01' ||
-        request.auth.uid == 'demo-guru-carbonova'
+        request.auth.token.email == 'guru@carbonova.com' ||
+        request.auth.token.email == 'guru.utama@carbonova.sch.id'
       );
     }
 

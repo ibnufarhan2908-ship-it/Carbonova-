@@ -383,5 +383,219 @@ Hasil: **Semua skenario Google Sign-In lulus (7 Lulus, 0 Gagal)**:
 - Logika penetapan role email guru resmi Google ditetapkan menjadi `teacher`.
 - Seluruh kode error popup Firebase (`popup-closed-by-user`, `popup-blocked`) dipetakan ke pesan bahasa Indonesia yang jelas.
 
+---
+
+## 7. Pembersihan Akun Demo & Penguncian Akses Akun Guru Tunggal Eksklusif
+
+Dokumentasi ini mencatat pembersihan menyeluruh kredensial akun demo (Demo Siswa dan Demo Guru) serta penguncian akses akun guru eksklusif pada proyek Carbonova.
+
+### 1. Ringkasan Perubahan Kode & File
+
+1. **`src/pages/auth/LoginPage.tsx`**:
+   - Menghapus komponen *"Akun Demo Terdaftar"* beserta tombol pengisian otomatis (*autofill*) kredensial untuk Guru Demo (`guru.demo@carbonova.test`) dan Siswa Demo (`siswa.demo@carbonova.test`).
+   - Menghapus fungsi `fillCredentials` dan membersihkan impor ikon yang tidak digunakan (`UserCheck`, `Sparkles`).
+   - Menjaga tampilan form login/register tetap bersih, profesional, dan fokus pada kredensial pengguna riil serta opsi login Google Sign-In.
+
+2. **`src/context/AuthContext.tsx`**:
+   - Menghapus mekanisme pendaftaran otomatis akun demo ke Firebase Authentication (`cleanEmail.includes('.demo@carbonova.test')`).
+   - Memastikan hanya pengguna yang sah yang dapat diautentikasi melalui Firebase Auth atau penyimpanan offline.
+
+3. **`src/config/authConfig.ts`**:
+   - Memperbarui email guru resmi default (`DEFAULT_TEACHER_EMAIL`) menjadi `guru@carbonova.com`.
+   - Menghapus UID hardcoded demo (`demo-guru-carbonova`, `usr-teacher-01`) dari whitelist sehingga penentuan akses guru berpegang teguh pada verifikasi email tunggal tepercaya `VITE_TEACHER_EMAIL`.
+   - Memastikan `isTeacherAccount` dan `isTeacherEmail` hanya meloloskan akun yang cocok persis dengan konfigurasi `getTrustedTeacherEmail()`.
+
+4. **`src/pages/teacher/TeacherDashboardPage.tsx`**:
+   - Menghapus fungsi helper `isDemoStudent`.
+   - Menghapus filter kategori *"Siswa Demo"* / *"Siswa Asli"* dan merampingkan tampilan ke input pencarian nama/email murni.
+   - Menghapus kode seeding dokumen siswa demo ke Firestore (`demo-siswa-carbonova`) dan penyisipan sintetis `demo-siswa-default`.
+   - Menghapus badge label *"Akun Demo"* / *"Akun Asli"* pada baris tabel data siswa.
+   - Memperbarui ringkasan kartu dan judul header metrik menjadi *"Total Siswa Terdaftar: X siswa terdaftar aktif"* (tanpa pemisahan Y Demo + Z Asli).
+   - Menghapus impor yang tidak terpakai (`serverTimestamp`, `doc`, `getDoc`, `setDoc`).
+
+5. **`src/pages/student/StudentDashboardPage.tsx`**:
+   - Membersihkan teks fallback nama dan email demo (`Siswa Demo`, `siswa.demo@carbonova.test`) pada kartu profil mini di header dashboard siswa.
+
+6. **`firestore.rules`**:
+   - Memperbarui fungsi keamanan `isTrustedTeacher()` pada Firestore Security Rules agar hanya mengenali email guru resmi tepercaya (`guru@carbonova.com` atau `guru.utama@carbonova.sch.id`), menghapus referensi email dan UID akun demo.
+   - Menegakkan aturan bahwa pengguna non-guru dilarang menetapkan atau mengubah field `role` miliknya menjadi `teacher` atau `guru`.
+   - Menegakkan bahwa seluruh data rekap siswa (`users`) dan submisi kuis (`quiz_submissions`, `quiz_results`) hanya boleh dibaca secara kolektif oleh akun guru resmi tepercaya.
+
+7. **`src/services/db.ts` & `data/users.json` & `server/authBackend.ts`**:
+   - Memperbarui fungsi `initDatabase()` untuk secara otomatis membersihkan dan membuang (*purge*) seluruh data akun demo lama (`siswa.demo@carbonova.test`, `guru.demo@carbonova.test`, `demo-siswa-carbonova`) dari penyimpanan lokal.
+   - Menginisialisasi akun guru utama resmi sesuai `getTrustedTeacherEmail()` (`guru@carbonova.com`) dengan password PBKDF2 hash yang aman.
+   - Tidak lagi melakukan inisialisasi/seeding akun siswa demo fiktif.
+
+8. **File Pengujian (`test_registration.mjs` & `test_auth_lms.mjs`)**:
+   - Menyesuaikan rangkaian pengujian otomatis untuk memverifikasi penolakan login kredensial demo lama (`guru.demo@carbonova.test` dan `siswa.demo@carbonova.test`).
+   - Memverifikasi login akun guru tunggal tepercaya dan registrasi akun siswa riil.
+
+---
+
+### 2. Cara Menguji Pembersihan Akun Demo & Akses Guru Tunggal
+
+#### A. Pengujian Manual di Antarmuka Browser
+1. Jalankan aplikasi Carbonova:
+   ```powershell
+   npm.cmd run dev
+   ```
+2. Buka `http://localhost:5173/login`:
+   - Pastikan **TIDAK ADA** bagian *"Akun Demo Terdaftar"* atau tombol klik-otomatis untuk mengisi kredensial Guru Demo/Siswa Demo di bawah form.
+   - Coba masuk menggunakan email lama `siswa.demo@carbonova.test` dan password `SiswaDemo123!` -> Sistem menolak masuk dengan pesan *"Email atau kata sandi tidak sesuai"*.
+   - Coba masuk menggunakan email lama `guru.demo@carbonova.test` dan password `GuruDemo123!` -> Sistem menolak masuk.
+3. **Pengujian Pendaftaran Publik**:
+   - Buka tab *"Daftar Akun Baru"*.
+   - Tidak terdapat opsi memilih peran guru. Daftarkan akun siswa baru (misal: `siswa.baru@sekolah.sch.id`).
+   - Masuk ke akun tersebut -> Pengguna diarahkan ke Dashboard Siswa (`/siswa/dashboard`).
+   - Coba ketik URL `/guru/dashboard` secara manual di bilah alamat browser -> Sistem otomatis memblokir dan mengarahkan kembali pengguna ke `/siswa/dashboard`.
+4. **Pengujian Akses Akun Guru Resmi**:
+   - Masuk menggunakan email guru resmi yang dikonfigurasi di `VITE_TEACHER_EMAIL` (default: `guru@carbonova.com`, password: `GuruCarbonova2026!`).
+   - Pengguna diarahkan ke Dashboard Guru (`/guru/dashboard`).
+   - Pada Dashboard Guru:
+     - Header kartu metrik hanya menampilkan total siswa terdaftar nyata tanpa embel-embel "(Y Demo + Z Asli)".
+     - Pada tabel data siswa, tidak ada filter kategori demo atau badge *"Akun Demo"*. Seluruh siswa yang tampil merupakan siswa terdaftar asli.
+
+#### B. Pengujian Otomatis via Test Runner
+Jalankan seluruh rangkaian pengujian di terminal PowerShell:
+```powershell
+npm.cmd test
+```
+Hasil:
+- `test_registration.mjs`: **40 Lulus, 0 Gagal**
+- `test_auth_lms.mjs`: **39 Lulus, 0 Gagal**
+- `test_quiz_storage_error.mjs`: **17 Lulus, 0 Gagal**
+- `test_modal_accessibility.mjs`: **Lulus**
+- `test_responsive_layout.mjs`: **Lulus**
+- `test_google_auth.mjs`: **7 Lulus, 0 Gagal**
+
+#### C. Pengujian Validasi Build & Lint
+Jalankan linting dan kompilasi TypeScript:
+```powershell
+npm.cmd run lint
+npm.cmd run build
+```
+Hasil:
+- `oxlint`: **0 error** (tidak ada variabel tidak terpakai atau impor rusak).
+- `tsc -b && vite build`: **Kompilasi sukses tanpa error** (`dist/` dihasilkan utuh dalam 4 detik).
+
+---
+
+## 8. Navigasi & Hak Akses Pengguna Umum (Tamu / Belum Login)
+
+Dokumentasi ini mencatat penyesuaian alur navigasi aplikasi Carbonova agar pengguna umum (tamu/belum login) dapat menjelajahi materi pembelajaran secara bebas tanpa dipaksa login ke website, sementara fitur interaktif pengerjaan kuis dan riwayat pengerjaan tetap terkunci aman untuk akun siswa terdaftar.
+
+### 1. Ringkasan Perubahan Kode & File
+
+1. **`src/App.tsx`**:
+   - Menghapus komponen redirect lama `RootRedirect` yang sebelumnya memaksa seluruh pengguna baru ke `/login`.
+   - Menetapkan rute root `/` untuk langsung merender `<HomePage />` (Beranda).
+   - Membuka akses publik tanpa `ProtectedRoute` untuk seluruh halaman modul:
+     - Beranda (`/` dan `/beranda`)
+     - Seluruh 6 Submodul Pembelajaran (`/materi` dan `/materi/:slug`)
+     - Molecule Explorer 3D Three.js (`/molekul`)
+     - Carbon Lab (`/lab`)
+     - Halaman Tentang Aplikasi (`/tentang`)
+   - Mengunci seluruh rute latihan soal (`/latihan`, `/latihan-soal`) dan riwayat pengerjaan kuis (`/riwayat`) di dalam `<ProtectedRoute role="student">`.
+   - Mengarahkan rute tak dikenal (*catch-all* `*`) kembali ke `/`.
+
+2. **`src/components/auth/LoginRequiredModal.tsx`** *(Komponen Modal Aksesibel & Anti-Terpotong)*:
+   - Dialog modal peringatan aksesibel yang muncul saat pengguna tamu mencoba membuka latihan soal dari navbar atau beranda.
+   - **Render via React Portal (`createPortal`)**: Memindahkan rendering DOM overlay dan dialog modal langsung ke `document.body` menggunakan `createPortal(modalContent, document.body)`. Ini membebaskan modal dari *containing block* dan *stacking context* milik elemen `<header>` yang memiliki `position: sticky` dan `backdrop-blur-md`, sehingga modal tidak lagi terjebak atau terpotong di tepi atas layar.
+   - **Posisi Tengah Viewport (Center Viewport) & Responsif**:
+     - Overlay penuh layar menggunakan kelas `fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto`.
+     - Kartu modal menggunakan kelas responsif `relative w-full max-w-md my-auto max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl`, memastikan seluruh elemen modal (ikon, header, deskripsi, daftar manfaat, tombol aksi) tetap utuh di tengah layar serta dapat di-scroll dengan mulus di layar pendek atau ponsel 375px.
+     - Mengunci scroll latar belakang (`document.body.style.overflow = 'hidden'`) saat modal terbuka agar halaman latar tidak bergulir.
+   - **Aksesibilitas Lengkap**: Mengikuti standar dialog WAI-ARIA (`role="dialog"`, `aria-modal="true"`, focus trap `Tab`/`Shift+Tab`, penutupan tombol `Escape`, klik area luar backdrop, dan pengembalian fokus keyboard ke elemen pemicu).
+   - Menampilkan pesan resmi: *"Silakan masuk (login) terlebih dahulu menggunakan akun siswa untuk mengerjakan dan mengirimkan jawaban latihan soal."*
+   - Dilengkapi tombol **"Masuk Sekarang"** yang mengarahkan ke `/login` dengan membawa `state: { from: redirectPath, message: ... }` serta tombol tutup modal.
+
+3. **`src/components/auth/ProtectedRoute.tsx`**:
+   - Jika pengguna belum diautentikasi (`!isAuthenticated`), arahkan pengguna ke `/login` via `<Navigate>` dengan menyertakan `state`:
+     ```ts
+     {
+       from: location.pathname,
+       message: 'Silakan masuk (login) terlebih dahulu menggunakan akun siswa untuk mengerjakan dan mengirimkan jawaban latihan soal.'
+     }
+     ```
+
+4. **`src/components/navigation/Navbar.tsx`**:
+   - Logo brand Carbonova pada navbar kini mengarahkan pengunjung ke `/` (bukan `/login`).
+   - Label tombol login tamu diperjelas menjadi **"Masuk / Daftar"**.
+   - Menambahkan event listener `handleQuizNavClick` pada tautan navigasi *"Latihan Soal"* dan menu mobile: jika pengguna belum login, navigasi diintersepsi untuk memunculkan `LoginRequiredModal` tanpa me-reload halaman.
+
+5. **`src/pages/HomePage.tsx`**:
+   - Mengintersepsi klik pada tombol *"Bank Soal Lengkap"* pada kartu ringkasan kuis: jika pengguna belum login, memunculkan `LoginRequiredModal` dengan `redirectPath="/latihan"`.
+
+6. **`src/pages/QuizPage.tsx`**:
+   - Menambahkan proteksi ganda pada aksi pengiriman jawaban kuis (`handleSubmitQuiz`). Jika sesi pengguna hilang atau belum login, submisi dibatalkan dan pengguna langsung dialihkan ke `/login` dengan notifikasi pengingat.
+
+7. **`src/pages/auth/LoginPage.tsx`**:
+   - Mendeteksi `location.state.message` saat pengguna dialihkan dari rute kuis atau tombol kuis: menampilkan banner peringatan berwarna kuning (*amber*) *"Akses Masuk Diperlukan"* dengan pesan instruksi ramah.
+   - Mendeteksi `location.state.from`: setelah pengguna berhasil masuk (baik via email/password maupun via Google Sign-In), sistem secara otomatis mengembalikan siswa ke halaman kuis asal (`stateFrom`) sehingga siswa dapat langsung belajar.
+
+8. **`test_public_navigation.mjs` & `package.json`**:
+   - Membuat skrip pengujian otomatis komprehensif yang memvalidasi 7 poin pengujian hak akses dan navigasi publik.
+   - Mendaftarkan skrip ke dalam `"test:nav"` dan `"npm test"`.
+
+---
+
+### 2. Cara Menguji Navigasi & Hak Akses Pengguna Umum
+
+#### A. Pengujian Manual di Browser
+1. Jalankan aplikasi dalam mode pengembangan:
+   ```powershell
+   npm.cmd run dev
+   ```
+2. Buka tab baru di browser (gunakan mode *Incognito* / *Private Window* untuk memastikan belum ada sesi login).
+3. **Akses Beranda & Modul Pembelajaran**:
+   - Buka `http://localhost:5173/` -> Website langsung menampilkan halaman Beranda tanpa diarahkan ke `/login`.
+   - Klik menu **"Materi"** (`/materi`) -> Seluruh 6 modul hidrokarbon dapat dibuka dan dibaca bebas.
+   - Klik menu **"Molekul 3D"** (`/molekul`) -> Visualisasi Three.js dapat dimainkan tanpa login.
+   - Klik menu **"Carbon Lab"** (`/lab`) -> Simulasi laboratorium virtual dapat digunakan tanpa login.
+   - Klik menu **"Tentang"** (`/tentang`) -> Halaman profil aplikasi terbuka normal.
+4. **Intersepsi Menu Latihan Soal dari Navbar**:
+   - Klik menu **"Latihan Soal"** di navbar bagian atas.
+   - Muncul modal popup dialog: *"Silakan masuk (login) terlebih dahulu menggunakan akun siswa untuk mengerjakan dan mengirimkan jawaban latihan soal."*
+   - Uji aksesibilitas: tekan `Tab` untuk berpindah fokus antara tombol "Masuk Sekarang" dan tombol "Tutup", lalu tekan `Escape` untuk menutup modal.
+5. **Intersepsi Tombol Mulai Kuis di Beranda**:
+   - Kembali ke Beranda, gulir ke kartu ringkasan latihan soal, klik tombol **"Bank Soal Lengkap"**.
+   - Modal popup login muncul dengan pesan instruksi yang sama.
+6. **Akses Langsung ke URL Latihan Soal**:
+   - Ketikkan langsung di bilah alamat browser: `http://localhost:5173/latihan` atau `http://localhost:5173/riwayat`.
+   - Sistem otomatis mengalihkan browser ke halaman `http://localhost:5173/login`.
+   - Di atas form login, muncul banner kuning peringatan: *"Akses Masuk Diperlukan - Silakan masuk (login) terlebih dahulu menggunakan akun siswa untuk mengerjakan dan mengirimkan jawaban latihan soal."*
+7. **Pengujian Alur Masuk & Kembalian Navigasi**:
+   - Masuk menggunakan akun siswa (atau klik "Masuk dengan Google").
+   - Setelah login berhasil, browser otomatis diarahkan kembali ke `http://localhost:5173/latihan`.
+   - Siswa dapat langsung memilih topik dan mengerjakan latihan soal.
+
+#### B. Pengujian Otomatis via Test Runner
+Jalankan pengujian di PowerShell:
+```powershell
+node test_public_navigation.mjs
+```
+atau jalankan seluruh suite:
+```powershell
+npm.cmd test
+```
+Hasil:
+- `test_public_navigation.mjs`: **7 Kategori Lulus, 0 Gagal**
+  1. Akses Publik Beranda & Modul di `src/App.tsx` (LULUS)
+  2. Penguncian Rute Latihan Soal & Riwayat (LULUS)
+  3. Verifikasi Pesan Pengalihan pada `ProtectedRoute.tsx` (LULUS)
+  4. Komponen Dialog Aksesibel `LoginRequiredModal.tsx` (LULUS)
+  5. Intersepsi Navbar & Label "Masuk / Daftar" (LULUS)
+  6. Intersepsi Tombol Kuis di `HomePage.tsx` (LULUS)
+  7. Banner Notifikasi & Alur Redirect di `LoginPage.tsx` (LULUS)
+
+#### C. Pengujian Validasi Build & Lint
+```powershell
+npm.cmd run lint
+npm.cmd run build
+```
+- Lint: **0 error** (15 harmless compiler warnings).
+- Build: **Kompilasi TypeScript & Vite sukses tanpa error** (`dist/` dihasilkan utuh).
+
+
 
 

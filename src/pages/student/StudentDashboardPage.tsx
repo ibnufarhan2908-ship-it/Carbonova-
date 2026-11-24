@@ -104,14 +104,14 @@ export default function StudentDashboardPage() {
           <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 min-w-0">
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 pr-4 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#101C3A] to-[#1DAA9A] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-                {user?.name ? user.name.substring(0, 2).toUpperCase() : 'SD'}
+                {user?.name ? user.name.substring(0, 2).toUpperCase() : 'SW'}
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-slate-800 leading-tight truncate">
-                  {user?.name || 'Siswa Demo'}
+                  {user?.name || 'Siswa'}
                 </span>
                 <span className="text-[11px] text-slate-500 truncate max-w-[150px]">
-                  {user?.email || 'siswa.demo@carbonova.test'}
+                  {user?.email || '-'}
                 </span>
               </div>
             </div>

@@ -25,10 +25,6 @@ import {
   query,
   where,
   onSnapshot,
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
 } from 'firebase/firestore'
 import {
   getTeacherStats,
@@ -39,7 +35,7 @@ import {
 import type { StudentQuizSubmission } from '../../types/auth'
 import QuizResultDetailModal from '../../components/quiz/QuizResultDetailModal'
 import type { QuizResult } from '../../types/quiz'
-import { isTeacherAccount } from '../../config/authConfig'
+import { isTeacherAccount, getTrustedTeacherEmail } from '../../config/authConfig'
 
 interface TeacherDashboardPageProps {
   initialView?: 'overview' | 'students' | 'results'
@@ -74,19 +70,12 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  // State Pencarian & Filter pada Data Siswa
+  // State Pencarian pada Data Siswa
   const [studentSearchQuery, setStudentSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<'Semua' | 'Siswa Demo' | 'Siswa Asli'>('Semua')
 
   // State untuk pencarian pada tab Hasil Pengerjaan & modal detail
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubmission, setSelectedSubmission] = useState<StudentQuizSubmission | null>(null)
-
-  // Helper identifikasi akun Siswa Demo
-  const isDemoStudent = (email: string) => {
-    const clean = (email || '').toLowerCase().trim()
-    return clean === 'siswa.demo@carbonova.test' || clean.endsWith('@carbonova.test')
-  }
 
   // Hak Akses AD11-01: Guard di level komponen agar role student tidak dapat mengakses dashboard guru
   useEffect(() => {
@@ -105,30 +94,6 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
 
     // Sinkronisasi data lokal jika ada
     syncFromFirestore().catch(() => {})
-
-    // Coba seeding akun Siswa Demo ke collection users di Firestore jika belum ada
-    if (db && isFirebaseConfigured) {
-      const firestore = db
-      const ensureDemoStudentDoc = async () => {
-        try {
-          const demoDocRef = doc(firestore, 'users', 'demo-siswa-carbonova')
-          const snap = await getDoc(demoDocRef)
-          if (!snap.exists()) {
-            await setDoc(demoDocRef, {
-              name: 'Siswa Demo',
-              email: 'siswa.demo@carbonova.test',
-              role: 'siswa',
-              kelas: 'XI MIPA 1',
-              createdAt: serverTimestamp(),
-              status: 'active',
-            })
-          }
-        } catch {
-          // Abaikan jika Firestore Security Rules menolak pembuatan langsung oleh role saat ini
-        }
-      }
-      ensureDemoStudentDoc()
-    }
 
     if (!db || !isFirebaseConfigured) {
       // Fallback ke penyimpanan lokal jika Firebase belum aktif
@@ -174,22 +139,6 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
             status: d.status || 'active',
           })
         })
-
-        // Pastikan Siswa Demo selalu ada di tampilan jika belum terisi di Firestore
-        const hasDemo = studentList.some(
-          (s) => s.email.toLowerCase() === 'siswa.demo@carbonova.test'
-        )
-        if (!hasDemo) {
-          studentList.unshift({
-            id: 'demo-siswa-default',
-            name: 'Siswa Demo',
-            email: 'siswa.demo@carbonova.test',
-            role: 'siswa',
-            kelas: 'XI MIPA 1',
-            createdAt: '2026-10-05T09:30:00.000Z',
-            status: 'active',
-          })
-        }
 
         setFirestoreStudents(studentList)
         setIsLoading(false)
@@ -289,19 +238,11 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
   }
 
   // 3. STATISTIK RINGKASAN TOTAL SISWA
-  const totalX = firestoreStudents.length
-  const demoY = firestoreStudents.filter((s) => isDemoStudent(s.email)).length
-  const realZ = firestoreStudents.filter((s) => !isDemoStudent(s.email)).length
+  const totalStudents = firestoreStudents.length
 
   // 4. FILTER DAN PENCARIAN DATA SISWA
   const filteredStudents = useMemo(() => {
     return firestoreStudents.filter((student) => {
-      const isDemo = isDemoStudent(student.email)
-
-      // Filter Kategori: Semua | Siswa Demo | Siswa Asli
-      if (categoryFilter === 'Siswa Demo' && !isDemo) return false
-      if (categoryFilter === 'Siswa Asli' && isDemo) return false
-
       // Input Pencarian (nama / email)
       if (studentSearchQuery.trim()) {
         const q = studentSearchQuery.toLowerCase().trim()
@@ -312,7 +253,7 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
 
       return true
     })
-  }, [firestoreStudents, categoryFilter, studentSearchQuery])
+  }, [firestoreStudents, studentSearchQuery])
 
   // Data submisi keseluruhan untuk tab Hasil Pengerjaan
   const localStats = getTeacherStats()
@@ -412,17 +353,14 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
           </p>
         </div>
 
-        {/* Informasi Total Siswa: Total Siswa Terdaftar: X siswa (Y Demo + Z Asli) */}
+        {/* Informasi Total Siswa */}
         <div className="text-xs sm:text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200/90 px-4 py-2 rounded-2xl shadow-2xs self-start sm:self-auto shrink-0">
           Total Siswa Terdaftar:{' '}
-          <span className="text-[#101C3A] font-extrabold">{totalX} siswa</span>{' '}
-          <span className="text-slate-500 font-medium">
-            ({demoY} Demo + {realZ} Asli)
-          </span>
+          <span className="text-[#101C3A] font-extrabold">{totalStudents} siswa</span>
         </div>
       </div>
 
-      {/* Kontrol Pencarian & Filter Kategori */}
+      {/* Kontrol Pencarian */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 min-w-0">
         {/* Input Pencarian */}
         <div className="relative flex-1 w-full sm:max-w-md min-w-0">
@@ -436,24 +374,6 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
             placeholder="Cari nama / email siswa..."
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all shadow-2xs min-w-0"
           />
-        </div>
-
-        {/* Filter Kategori: Semua | Siswa Demo | Siswa Asli */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto min-w-0">
-          {(['Semua', 'Siswa Demo', 'Siswa Asli'] as const).map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                categoryFilter === cat
-                  ? 'bg-white text-[#101C3A] shadow-xs'
-                  : 'text-slate-600 hover:text-[#101C3A]'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -499,7 +419,6 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
             <tbody className="divide-y divide-slate-100 text-sm">
               {filteredStudents.map((student) => {
                 const quizStats = getStudentQuizStats(student.email, student.id)
-                const isDemo = isDemoStudent(student.email)
 
                 return (
                   <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
@@ -513,15 +432,6 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                           <span className="block font-bold text-slate-800 leading-snug truncate max-w-[160px]">
                             {student.name}
                           </span>
-                          {isDemo ? (
-                            <span className="inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                              Akun Demo
-                            </span>
-                          ) : (
-                            <span className="inline-block text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              Akun Asli
-                            </span>
-                          )}
                         </div>
                       </div>
                     </td>
@@ -615,14 +525,14 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
           <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 pr-4">
               <div className="w-10 h-10 rounded-xl bg-[#101C3A] text-white flex items-center justify-center font-bold text-sm">
-                {user?.name ? user.name.substring(0, 2).toUpperCase() : 'GD'}
+                {user?.name ? user.name.substring(0, 2).toUpperCase() : 'GU'}
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-800 leading-tight">
-                  {user?.name || 'Guru Demo'}
+                  {user?.name || 'Guru'}
                 </span>
                 <span className="text-[11px] text-slate-500 truncate max-w-[150px]">
-                  {user?.email || 'guru.demo@carbonova.test'}
+                  {user?.email || getTrustedTeacherEmail()}
                 </span>
               </div>
             </div>
@@ -694,11 +604,11 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold text-[#101C3A] mb-1">
-                  {totalX}
+                  {totalStudents}
                 </div>
                 <p className="text-xs text-slate-500">
-                  {totalX > 0
-                    ? `${totalX} siswa terdaftar (${demoY} Demo, ${realZ} Asli)`
+                  {totalStudents > 0
+                    ? `${totalStudents} siswa terdaftar aktif`
                     : 'Belum ada siswa terdaftar'}
                 </p>
               </div>

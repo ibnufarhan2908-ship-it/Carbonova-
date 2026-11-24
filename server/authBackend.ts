@@ -81,32 +81,25 @@ export function writeUsers(users: StoredUser[]): void {
 }
 
 function createInitialUsers(): StoredUser[] {
-  const teacherSalt = generateSalt()
-  const teacherHash = hashPassword('GuruDemo123!', teacherSalt)
+  const teacherEmail = (
+    process.env.VITE_TEACHER_EMAIL ||
+    process.env.TEACHER_EMAIL ||
+    'guru@carbonova.com'
+  ).trim().toLowerCase()
 
-  const studentSalt = generateSalt()
-  const studentHash = hashPassword('SiswaDemo123!', studentSalt)
+  const teacherSalt = generateSalt()
+  const teacherHash = hashPassword('GuruCarbonova2026!', teacherSalt)
 
   return [
     {
       id: 'usr-teacher-01',
-      name: 'Guru Demo',
-      email: 'guru.demo@carbonova.test',
+      name: 'Guru Utama Carbonova',
+      email: teacherEmail,
       role: 'teacher',
       status: 'active',
       passwordHash: teacherHash,
       salt: teacherSalt,
       createdAt: '2026-10-01T08:00:00.000Z',
-    },
-    {
-      id: 'usr-student-01',
-      name: 'Siswa Demo',
-      email: 'siswa.demo@carbonova.test',
-      role: 'student',
-      status: 'active',
-      passwordHash: studentHash,
-      salt: studentSalt,
-      createdAt: '2026-10-05T09:30:00.000Z',
     },
   ]
 }
@@ -246,7 +239,7 @@ export async function handleAuthApi(req: IncomingMessage, res: ServerResponse): 
       const trustedTeacherEmail = (
         process.env.VITE_TEACHER_EMAIL ||
         process.env.TEACHER_EMAIL ||
-        'guru.demo@carbonova.test'
+        'guru@carbonova.com'
       ).trim().toLowerCase()
       const assignedRole: 'teacher' | 'student' = cleanEmail === trustedTeacherEmail ? 'teacher' : 'student'
 

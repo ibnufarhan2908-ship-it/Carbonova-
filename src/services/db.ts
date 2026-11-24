@@ -7,7 +7,7 @@ import type {
   StudentSummaryStats,
 } from '../types/auth'
 import { generateSalt, hashPassword } from './crypto.ts'
-import { isTeacherAccount } from '../config/authConfig.ts'
+import { isTeacherAccount, getTrustedTeacherEmail } from '../config/authConfig.ts'
 import { LESSON_MODULES } from '../data/lessons.ts'
 import { QUIZ_QUESTIONS } from '../data/questions.ts'
 import {
@@ -48,7 +48,7 @@ let dbInitialized = false
 let initPromise: Promise<void> | null = null
 
 /**
- * Inisialisasi Database: Memastikan akun demo terdaftar dengan password ber-hash & salt
+ * Inisialisasi Database: Memastikan akun guru resmi tepercaya terdaftar dan membersihkan akun demo
  */
 export async function initDatabase(): Promise<void> {
   if (dbInitialized) return
@@ -59,45 +59,40 @@ export async function initDatabase(): Promise<void> {
       const users = getStoredItem<StoredUser[]>(USERS_STORAGE_KEY, [])
       let updated = false
 
-      // Cek Akun Guru Demo
+      // Bersihkan seluruh data akun demo lama dari penyimpanan lokal
+      const cleanedUsers = users.filter(
+        (u) =>
+          u.email.toLowerCase() !== 'siswa.demo@carbonova.test' &&
+          u.email.toLowerCase() !== 'guru.demo@carbonova.test' &&
+          u.id !== 'usr-student-01' &&
+          u.id !== 'demo-siswa-carbonova' &&
+          u.id !== 'demo-guru-carbonova'
+      )
+      if (cleanedUsers.length !== users.length) {
+        users.length = 0
+        users.push(...cleanedUsers)
+        updated = true
+      }
+
+      // Pastikan Akun Guru Resmi Utama Terdaftar
+      const teacherEmail = getTrustedTeacherEmail()
       const teacherIndex = users.findIndex(
-        (u) => u.email.toLowerCase() === 'guru.demo@carbonova.test'
+        (u) => u.email.toLowerCase() === teacherEmail.toLowerCase()
       )
       if (teacherIndex === -1) {
         const salt = generateSalt()
-        const passwordHash = await hashPassword('GuruDemo123!', salt)
-        const demoTeacher: StoredUser = {
+        const passwordHash = await hashPassword('GuruCarbonova2026!', salt)
+        const officialTeacher: StoredUser = {
           id: 'usr-teacher-01',
-          name: 'Guru Demo',
-          email: 'guru.demo@carbonova.test',
+          name: 'Guru Utama Carbonova',
+          email: teacherEmail,
           role: 'teacher',
           status: 'active',
           createdAt: '2026-10-01T08:00:00.000Z',
           passwordHash,
           salt,
         }
-        users.push(demoTeacher)
-        updated = true
-      }
-
-      // Cek Akun Siswa Demo
-      const studentIndex = users.findIndex(
-        (u) => u.email.toLowerCase() === 'siswa.demo@carbonova.test'
-      )
-      if (studentIndex === -1) {
-        const salt = generateSalt()
-        const passwordHash = await hashPassword('SiswaDemo123!', salt)
-        const demoStudent: StoredUser = {
-          id: 'usr-student-01',
-          name: 'Siswa Demo',
-          email: 'siswa.demo@carbonova.test',
-          role: 'student',
-          status: 'active',
-          createdAt: '2026-10-05T09:30:00.000Z',
-          passwordHash,
-          salt,
-        }
-        users.push(demoStudent)
+        users.push(officialTeacher)
         updated = true
       }
 
