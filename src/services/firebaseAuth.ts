@@ -1,6 +1,8 @@
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -31,6 +33,7 @@ export async function getOrCreateUserProfile(
       name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
       email: fbUser.email || '',
       role: fallbackRole,
+      photoURL: fbUser.photoURL || undefined,
       status: 'active',
       createdAt: now,
       lastLoginAt: now,
@@ -44,7 +47,11 @@ export async function getOrCreateUserProfile(
     if (userSnapshot.exists()) {
       const data = userSnapshot.data()
       try {
-        await updateDoc(userDocRef, { lastLoginAt: now })
+        const updatePayload: Record<string, any> = { lastLoginAt: now }
+        if (fbUser.photoURL && !data.photoURL) {
+          updatePayload.photoURL = fbUser.photoURL
+        }
+        await updateDoc(userDocRef, updatePayload)
       } catch {
         // Abaikan jika rule Firestore terbatas
       }
@@ -65,6 +72,7 @@ export async function getOrCreateUserProfile(
         name: data.name || fbUser.displayName || 'Pengguna',
         email: data.email || fbUser.email || '',
         role: parsedRole,
+        photoURL: data.photoURL || fbUser.photoURL || undefined,
         kelas: data.kelas || '-',
         status: data.status || 'active',
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : (data.createdAt || now),
@@ -78,6 +86,7 @@ export async function getOrCreateUserProfile(
       name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
       email: fbUser.email || '',
       role: fallbackRole,
+      photoURL: fbUser.photoURL || undefined,
       kelas: '-',
       status: 'active',
       createdAt: now,
@@ -88,7 +97,7 @@ export async function getOrCreateUserProfile(
       await setDoc(userDocRef, {
         name: newProfile.name,
         email: newProfile.email,
-        role: fallbackRole,
+        role: roleYangDipilih,
         kelas: '-',
         createdAt: serverTimestamp(),
       })
@@ -104,30 +113,7 @@ export async function getOrCreateUserProfile(
       name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
       email: fbUser.email || '',
       role: fallbackRole,
-      status: 'active',
-      createdAt: now,
-      lastLoginAt: now,
-    }
-  }
-}
-        name: newProfile.name,
-        email: newProfile.email,
-        role: 'student',
-        kelas: '-',
-        createdAt: serverTimestamp(),
-      })
-    } catch (err) {
-      console.warn('Gagal menyimpan profil baru ke Firestore (periksa Firestore Security Rules):', err)
-    }
-
-    return newProfile
-  } catch (err) {
-    console.warn('Gagal membaca profil dari Firestore:', err)
-    return {
-      id: fbUser.uid,
-      name: fbUser.displayName || fbUser.email?.split('@')[0] || 'Pengguna',
-      email: fbUser.email || '',
-      role: fallbackRole,
+      photoURL: fbUser.photoURL || undefined,
       status: 'active',
       createdAt: now,
       lastLoginAt: now,
@@ -170,6 +156,66 @@ export async function firebaseSignIn(
     } else if (error.message) {
       message = error.message
     }
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Login atau Registrasi menggunakan Google Sign-In (Firebase Authentication)
+ */
+export async function firebaseSignInWithGoogle(): Promise<{
+  success: boolean
+  user?: User
+  error?: string
+}> {
+  if (!auth || !isFirebaseConfigured) {
+    return {
+      success: false,
+      error:
+        'Layanan Firebase belum diinisialisasi atau konfigurasi Firebase kosong di file .env.',
+    }
+  }
+
+  try {
+    const provider = new GoogleAuthProvider()
+    provider.setCustomParameters({ prompt: 'select_account' })
+
+    const userCredential = await signInWithPopup(auth, provider)
+    const fbUser = userCredential.user
+
+    // Buat atau dapatkan dokumen profil dari Firestore (users/{uid})
+    const user = await getOrCreateUserProfile(fbUser)
+
+    return { success: true, user }
+  } catch (error: any) {
+    console.error('Firebase Google sign-in error:', error)
+    let message = 'Terjadi kesalahan saat masuk dengan Google.'
+
+    if (error.code === 'auth/popup-closed-by-user') {
+      message =
+        'Jendela login Google ditutup sebelum proses masuk selesai. Silakan coba kembali.'
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      message =
+        'Proses login Google dibatalkan karena ada jendela popup lain yang dibuka.'
+    } else if (error.code === 'auth/popup-blocked') {
+      message =
+        'Jendela popup Google diblokir oleh browser. Harap izinkan popup pada peramban Anda lalu coba lagi.'
+    } else if (error.code === 'auth/operation-not-allowed') {
+      message =
+        'Metode login Google belum diaktifkan di Firebase Console. Buka Firebase Console > Authentication > Sign-in method lalu aktifkan penyedia "Google".'
+    } else if (error.code === 'auth/unauthorized-domain') {
+      message =
+        'Domain aplikasi ini belum diizinkan di Firebase Console. Buka Authentication > Settings > Authorized domains dan tambahkan domain yang Anda gunakan.'
+    } else if (error.code === 'auth/network-request-failed') {
+      message =
+        'Gagal terhubung ke layanan Google/Firebase. Periksa koneksi internet Anda.'
+    } else if (error.code === 'auth/account-exists-with-different-credential') {
+      message =
+        'Akun dengan email ini sudah terdaftar dengan metode lain (misal: kata sandi). Silakan masuk menggunakan form email dan kata sandi.'
+    } else if (error.message) {
+      message = error.message
+    }
+
     return { success: false, error: message }
   }
 }

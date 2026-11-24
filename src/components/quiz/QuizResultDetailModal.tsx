@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, CheckCircle2, XCircle, Trophy, Calendar, Award } from 'lucide-react'
 import type { QuizResult } from '../../types/quiz'
 import { formatChemicalText } from '../ChemicalFormula'
@@ -13,59 +14,71 @@ export default function QuizResultDetailModal({
   onClose,
 }: QuizResultDetailModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
   const previousActiveElementRef = useRef<HTMLElement | null>(null)
 
-  // Simpan elemen yang aktif sebelum modal terbuka & kembalikan fokus saat modal ditutup
-  useEffect(() => {
-    if (result) {
-      previousActiveElementRef.current = document.activeElement as HTMLElement
-      // Pindahkan fokus ke tombol close atau modal container
-      const closeBtn = modalRef.current?.querySelector('button') as HTMLElement
-      if (closeBtn) {
-        closeBtn.focus()
-      } else if (modalRef.current) {
-        modalRef.current.focus()
-      }
-    }
-
-    return () => {
-      if (previousActiveElementRef.current && typeof previousActiveElementRef.current.focus === 'function') {
-        previousActiveElementRef.current.focus()
-      }
-    }
-  }, [result])
-
-  // Listen tombol Escape dan Focus Trap (Tab tidak keluar dari modal)
   useEffect(() => {
     if (!result) return
 
+    // 1. Simpan elemen yang sedang aktif/fokus sebelum modal terbuka (Focus Restoration)
+    previousActiveElementRef.current = document.activeElement as HTMLElement | null
+
+    // 2. Kunci scroll body dan buat elemen latar belakang non-interaktif
+    const originalBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const rootEl = document.getElementById('root')
+    const originalAriaHidden = rootEl?.getAttribute('aria-hidden')
+    const originalInert = rootEl?.hasAttribute('inert')
+
+    if (rootEl) {
+      rootEl.setAttribute('aria-hidden', 'true')
+      rootEl.setAttribute('inert', '')
+    }
+
+    // 3. Pindahkan fokus awal ke elemen interaktif pertama (tombol tutup) atau kontainer modal
+    const focusTimer = window.setTimeout(() => {
+      if (closeButtonRef.current) {
+        closeButtonRef.current.focus()
+      } else if (modalRef.current) {
+        modalRef.current.focus()
+      }
+    }, 0)
+
+    // 4. Keyboard Listener: Escape untuk menutup modal & Focus Trap untuk Tab / Shift+Tab
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
+        e.stopPropagation()
         onClose()
         return
       }
 
       if (e.key === 'Tab') {
         if (!modalRef.current) return
-        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        const focusable = Array.from(focusableElements).filter(
-          (el) => !el.hasAttribute('disabled') && el.offsetParent !== null
-        )
 
-        if (focusable.length === 0) return
+        const focusableSelector =
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
+        const focusableElements = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>(focusableSelector)
+        ).filter((el) => el.offsetParent !== null || el.offsetWidth > 0 || el.offsetHeight > 0)
 
-        const firstElement = focusable[0]
-        const lastElement = focusable[focusable.length - 1]
+        if (focusableElements.length === 0) {
+          e.preventDefault()
+          return
+        }
+
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
 
         if (e.shiftKey) {
-          if (document.activeElement === firstElement) {
+          // Shift + Tab: jika di elemen pertama, putar ke elemen terakhir
+          if (document.activeElement === firstElement || document.activeElement === modalRef.current) {
             e.preventDefault()
             lastElement.focus()
           }
         } else {
+          // Tab: jika di elemen terakhir, putar ke elemen pertama
           if (document.activeElement === lastElement) {
             e.preventDefault()
             firstElement.focus()
@@ -75,8 +88,33 @@ export default function QuizResultDetailModal({
     }
 
     window.addEventListener('keydown', handleKeyDown)
+
     return () => {
+      window.clearTimeout(focusTimer)
       window.removeEventListener('keydown', handleKeyDown)
+
+      // Pulihkan style scroll body
+      document.body.style.overflow = originalBodyOverflow
+
+      // Pulihkan atribut pada root latar belakang
+      if (rootEl) {
+        if (originalAriaHidden !== null && originalAriaHidden !== undefined) {
+          rootEl.setAttribute('aria-hidden', originalAriaHidden)
+        } else {
+          rootEl.removeAttribute('aria-hidden')
+        }
+
+        if (originalInert) {
+          rootEl.setAttribute('inert', '')
+        } else {
+          rootEl.removeAttribute('inert')
+        }
+      }
+
+      // Kembalikan fokus ke elemen pemicu sebelumnya
+      if (previousActiveElementRef.current && typeof previousActiveElementRef.current.focus === 'function') {
+        previousActiveElementRef.current.focus()
+      }
     }
   }, [result, onClose])
 
@@ -90,18 +128,27 @@ export default function QuizResultDetailModal({
     minute: '2-digit',
   })
 
-  return (
+  // Penanganan klik backdrop luar untuk menutup modal
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
+  const modalContent = (
     <div
+      ref={modalRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="quiz-detail-title"
       aria-label="Detail Hasil Kuis"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+      tabIndex={-1}
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in outline-none"
     >
       <div
-        ref={modalRef}
-        tabIndex={-1}
-        className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] outline-none"
+        className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="p-6 bg-gradient-to-r from-[#101C3A] to-[#152852] text-white flex items-center justify-between shrink-0">
@@ -119,6 +166,7 @@ export default function QuizResultDetailModal({
             </div>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             onKeyDown={(e) => {
@@ -127,7 +175,7 @@ export default function QuizResultDetailModal({
                 onClose()
               }
             }}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400"
+            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
             aria-label="Tutup detail kuis"
           >
             <X className="w-5 h-5" />
@@ -176,7 +224,12 @@ export default function QuizResultDetailModal({
         </div>
 
         {/* Scrollable Questions List with Selected & Correct Answers */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Rincian Jawaban Soal"
+          className="p-6 overflow-y-auto space-y-6 focus:outline-hidden focus:ring-1 focus:ring-teal-400"
+        >
           <h3 className="font-bold text-sm text-[#101C3A] flex items-center gap-2">
             <Trophy className="w-4 h-4 text-[#1DAA9A]" />
             Rincian Jawaban Soal:
@@ -254,7 +307,25 @@ export default function QuizResultDetailModal({
             ))}
           </div>
         </div>
+
+        {/* Modal Footer with Close Button & Keyboard Hint */}
+        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 shrink-0 flex items-center justify-between">
+          <span className="text-xs text-slate-500 font-medium">
+            Tekan <kbd className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold">Esc</kbd> untuk menutup
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl font-bold text-sm bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors cursor-pointer"
+          >
+            Tutup
+          </button>
+        </div>
       </div>
     </div>
   )
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent
 }

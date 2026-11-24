@@ -10,6 +10,8 @@ export interface User {
   status: 'active' | 'inactive'
   createdAt: string
   lastLoginAt?: string
+  photoURL?: string
+  avatar?: string
 }
 
 export interface StoredUser extends User {

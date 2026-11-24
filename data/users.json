@@ -8,7 +8,7 @@
     "passwordHash": "2eee97ed7137d71fd55dcaedadf7f6fca1cffa5c9f2100ba9a8d0bce436edfaa",
     "salt": "52c6f84bafbaa467b9b30bbeb8b96a4d",
     "createdAt": "2026-10-01T08:00:00.000Z",
-    "lastLoginAt": "2026-11-24T02:18:30.055Z"
+    "lastLoginAt": "2026-11-24T08:24:11.680Z"
   },
   {
     "id": "usr-student-01",
@@ -80,7 +80,7 @@
     "passwordHash": "93b4cb0023f03f881ce9a61b962071438c5389bd4fb77597eb2166c8482a78b3",
     "salt": "b20226aa0ac2ac70152c1eed67f9821e",
     "createdAt": "2026-11-24T01:58:36.432Z",
-    "lastLoginAt": "2026-11-24T02:17:01.540Z"
+    "lastLoginAt": "2026-11-24T04:01:45.133Z"
   },
   {
     "id": "usr-student-mwu28vah-dd5b57",
@@ -91,5 +91,45 @@
     "passwordHash": "85221a0a3272279fa143b28b0cfc29f335770f6309e1f3e817eab8b18ef8d821",
     "salt": "245b3d3a22e59a3db153f23b822cbcce",
     "createdAt": "2026-11-24T02:13:23.177Z"
+  },
+  {
+    "id": "usr-student-mwu5lzav-fe0c0a",
+    "name": "Siswa Backend Api",
+    "email": "siswa.backend.1795492053713@sekolah.sch.id",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "415dbd8d62a3956c2aeaa5f606554b395c7c84f21c87da082dd2b8a7c48df1e3",
+    "salt": "7a066b51ce323284f481b88faea557d3",
+    "createdAt": "2026-11-24T03:47:33.751Z"
+  },
+  {
+    "id": "usr-student-mwu5z9c9-c247a9",
+    "name": "Siswa Backend Api",
+    "email": "siswa.backend.1795492673263@sekolah.sch.id",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "aa96c682f8ec5b4c3ad177aa181a796c9915cb4d70b311c20a508cd4a2b6a611",
+    "salt": "d7ba29bebeabd7d9bb6662aee5b09df3",
+    "createdAt": "2026-11-24T03:57:53.289Z"
+  },
+  {
+    "id": "usr-student-mwufer2i-127af9",
+    "name": "Siswa Backend Api",
+    "email": "siswa.backend.1795508512593@sekolah.sch.id",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "92e5581745f903efd88406da238aee7383dacf83de8f59a2fb8d0693385f011b",
+    "salt": "a6ecde9c4179b280efffa8eca21eea6f",
+    "createdAt": "2026-11-24T08:21:52.650Z"
+  },
+  {
+    "id": "usr-student-mwuiht9e-09dade",
+    "name": "Siswa Backend Api",
+    "email": "siswa.backend.1795513694244@sekolah.sch.id",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "1c6634f9f56cb7e6b38e57cea3dd8c61b27e6e247b664579e73dbdfafcda6c51",
+    "salt": "3d7c0ff9da025e694315a2f478af8029",
+    "createdAt": "2026-11-24T09:48:14.306Z"
   }
 ]

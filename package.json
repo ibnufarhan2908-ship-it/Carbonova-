@@ -9,7 +9,11 @@
     "lint": "oxlint",
     "test:auth": "node --experimental-strip-types test_auth_lms.mjs",
     "test:registration": "node --experimental-strip-types test_registration.mjs",
-    "test": "node --experimental-strip-types test_registration.mjs && node --experimental-strip-types test_auth_lms.mjs",
+    "test:quiz-error": "node --experimental-strip-types test_quiz_storage_error.mjs",
+    "test:a11y": "node test_modal_accessibility.mjs",
+    "test:responsive": "node test_responsive_layout.mjs",
+    "test:google": "node test_google_auth.mjs",
+    "test": "node --experimental-strip-types test_registration.mjs && node --experimental-strip-types test_auth_lms.mjs && node --experimental-strip-types test_quiz_storage_error.mjs && node test_modal_accessibility.mjs && node test_responsive_layout.mjs && node test_google_auth.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
