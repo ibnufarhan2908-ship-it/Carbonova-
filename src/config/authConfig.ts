@@ -11,7 +11,6 @@ export const DEFAULT_TEACHER_EMAIL = 'guru.demo@carbonova.test'
 // Email guru demo yang diberikan akses read‑only
 export const DEMO_TEACHER_EMAIL = 'guru.demo@carbonova.test'
 
-
 // UID guru demo (lokal demo & Firebase demo)
 export const TRUSTED_TEACHER_UIDS = ['usr-teacher-01', 'demo-guru-carbonova']
 
@@ -26,7 +25,7 @@ export function getTrustedTeacherEmail(): string {
       return metaEnv.VITE_TEACHER_EMAIL.trim().toLowerCase()
     }
   } catch {
-    // Abaikan jika import.meta tidak tersedia
+    // ignore if import.meta not available
   }
 
   // Node.js test environment (process.env)
@@ -39,7 +38,7 @@ export function getTrustedTeacherEmail(): string {
       return globalObj.process.env.TEACHER_EMAIL.trim().toLowerCase()
     }
   } catch {
-    // Abaikan jika process tidak tersedia
+    // ignore if process not available
   }
 
   return DEFAULT_TEACHER_EMAIL.toLowerCase()
@@ -81,24 +80,6 @@ export function isTeacherAccount(email?: string | null, uid?: string | null): bo
     } catch {}
   }
   // Email saja tidak cukup untuk menjadi guru; hanya untuk demo read‑only
-  return false
-}
-  if (isTeacherEmail(email)) return true
-
-  if (uid && typeof uid === 'string') {
-    const cleanUid = uid.trim()
-    if (TRUSTED_TEACHER_UIDS.includes(cleanUid)) return true
-
-    try {
-      const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env
-      if (metaEnv?.VITE_TEACHER_UID && cleanUid === metaEnv.VITE_TEACHER_UID.trim()) {
-        return true
-      }
-    } catch {
-      // Abaikan
-    }
-  }
-
   return false
 }
 

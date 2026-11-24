@@ -93,15 +93,15 @@ export async function getOrCreateUserProfile(
       lastLoginAt: now,
     }
 
-    try {
-      await setDoc(userDocRef, {
-        name: newProfile.name,
-        email: newProfile.email,
-        role: roleYangDipilih,
-        kelas: '-',
-        createdAt: serverTimestamp(),
-      })
-    } catch (err) {
+      try {
+        await setDoc(userDocRef, {
+          name: newProfile.name,
+          email: newProfile.email,
+          role: effectiveRole,
+          kelas: '-',
+          createdAt: serverTimestamp(),
+        });
+      } catch (err) {
       console.warn('Gagal menyimpan profil baru ke Firestore (periksa Firestore Security Rules):', err)
     }
 
