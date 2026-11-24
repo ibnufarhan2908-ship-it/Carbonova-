@@ -13,29 +13,6 @@ import TeacherDashboardPage from './pages/teacher/TeacherDashboardPage'
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import PublicRoute from './components/auth/PublicRoute'
-import { isTeacherAccount } from './config/authConfig'
-
-function RootRedirect() {
-  const { isAuthenticated, user, isLoading } = useAuth()
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FB]">
-        <div className="w-8 h-8 border-3 border-[#101C3A] border-t-[#1DAA9A] rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (user.role === 'teacher' && isTeacherAccount(user.email, user.id)) {
-    return <Navigate to="/guru/dashboard" replace />
-  }
-
-  return <Navigate to="/siswa/dashboard" replace />
-}
 
 export default function App() {
   return (

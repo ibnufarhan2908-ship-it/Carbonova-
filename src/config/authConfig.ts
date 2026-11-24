@@ -6,17 +6,14 @@
  * role 'teacher' dan mengakses dashboard atau rekap data siswa.
  */
 
-// Email guru demo default untuk Carbonova
-export const DEFAULT_TEACHER_EMAIL = 'guru.demo@carbonova.test'
-// Email guru demo yang diberikan akses read‑only
-export const DEMO_TEACHER_EMAIL = 'guru.demo@carbonova.test'
+// Email guru resmi default untuk Carbonova jika environment variable belum diatur
+export const DEFAULT_TEACHER_EMAIL = 'guru@carbonova.com'
 
-
-// UID guru demo (lokal demo & Firebase demo)
-export const TRUSTED_TEACHER_UIDS = ['usr-teacher-01', 'demo-guru-carbonova']
+// UID guru tepercaya (opsional jika dikonfigurasi melalui environment)
+export const TRUSTED_TEACHER_UIDS: string[] = ['usr-teacher-01']
 
 /**
- * Mendapatkan email guru resmi / demo dari environment variable (Vite / Node.js) atau default whitelist
+ * Mendapatkan email guru resmi dari environment variable (Vite / Node.js) atau default whitelist
  */
 export function getTrustedTeacherEmail(): string {
   // Vite client-side environment (import.meta.env)
@@ -46,18 +43,14 @@ export function getTrustedTeacherEmail(): string {
 }
 
 /**
- * Memeriksa apakah suatu akun adalah akun Guru Demo (read-only)
+ * Memeriksa apakah suatu akun adalah akun Guru Demo (kompatibilitas mundur)
  */
-export function isTeacherDemoAccount(email?: string | null, uid?: string | null): boolean {
-  if (!email && !uid) return false
-  const cleanEmail = email ? email.trim().toLowerCase() : ''
-  if (cleanEmail === DEFAULT_TEACHER_EMAIL.toLowerCase()) return true
-  if (uid && TRUSTED_TEACHER_UIDS.includes(uid.trim())) return true
+export function isTeacherDemoAccount(_email?: string | null, _uid?: string | null): boolean {
   return false
 }
 
 /**
- * Memeriksa apakah suatu alamat email adalah email guru (demo atau terotorisasi)
+ * Memeriksa apakah suatu alamat email adalah email guru resmi tepercaya
  */
 export function isTeacherEmail(email?: string | null): boolean {
   if (!email || typeof email !== 'string') return false
@@ -66,27 +59,15 @@ export function isTeacherEmail(email?: string | null): boolean {
 }
 
 /**
- * Memeriksa apakah akun pengguna (berdasarkan email dan/atau UID) berhak atas akses guru ('teacher' atau 'teacher_demo')
+ * Memeriksa apakah akun pengguna (berdasarkan email dan/atau UID) berhak atas role 'teacher'
+ * Hanya email yang cocok persis dengan email guru tepercaya yang diakui
  */
 export function isTeacherAccount(email?: string | null, uid?: string | null): boolean {
-  // Hanya akun dengan UID yang ada dalam whitelist dianggap guru asli
-  if (uid && typeof uid === 'string') {
-    const cleanUid = uid.trim()
-    if (TRUSTED_TEACHER_UIDS.includes(cleanUid)) return true
-    try {
-      const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env
-      if (metaEnv?.VITE_TEACHER_UID && cleanUid === metaEnv.VITE_TEACHER_UID.trim()) {
-        return true
-      }
-    } catch {}
-  }
-  // Email saja tidak cukup untuk menjadi guru; hanya untuk demo read‑only
-  return false
-}
   if (isTeacherEmail(email)) return true
 
   if (uid && typeof uid === 'string') {
     const cleanUid = uid.trim()
+    if (TRUSTED_TEACHER_UIDS.includes(cleanUid)) return true
     try {
       const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env
       if (metaEnv?.VITE_TEACHER_UID && cleanUid === metaEnv.VITE_TEACHER_UID.trim()) {
@@ -101,16 +82,15 @@ export function isTeacherAccount(email?: string | null, uid?: string | null): bo
 }
 
 /**
- * Menentukan role spesifik guru: 'teacher_demo' untuk guru demo (read-only), atau 'teacher' untuk guru asli
+ * Menentukan role spesifik guru: mengembalikan 'teacher'
  */
-export function resolveTeacherRole(email?: string | null, uid?: string | null, firestoreRole?: string | null): 'teacher' | 'teacher_demo' {
-  // Jika akun adalah akun guru demo default
-  if (isTeacherDemoAccount(email, uid)) {
-    return 'teacher_demo'
-  }
-  // Jika akun memiliki role teacher/guru di Firestore dan telah diverifikasi admin
-  if (firestoreRole === 'teacher_demo') {
-    return 'teacher_demo'
+export function resolveTeacherRole(
+  email?: string | null,
+  uid?: string | null,
+  _firestoreRole?: string | null
+): 'teacher' {
+  if (isTeacherAccount(email, uid)) {
+    return 'teacher'
   }
   return 'teacher'
 }

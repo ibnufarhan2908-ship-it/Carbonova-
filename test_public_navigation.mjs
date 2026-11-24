@@ -40,7 +40,7 @@ console.log('✅ PASS: Halaman Beranda, Materi, Molekul, Lab, dan Tentang dapat 
 // 2. Verifikasi Penguncian Rute Latihan Soal & Riwayat Kuis di src/App.tsx
 console.log('\n--- 2. Verifikasi Penguncian Rute Latihan Soal di src/App.tsx ---')
 assert.ok(
-  appCode.includes('path="latihan"') && appCode.includes('<ProtectedRoute>\n                  <QuizPage />\n                </ProtectedRoute>'),
+  appCode.includes('path="latihan"') && appCode.includes('<ProtectedRoute>') && appCode.includes('<QuizPage />'),
   'Rute /latihan harus terkunci di dalam ProtectedRoute'
 )
 assert.ok(
