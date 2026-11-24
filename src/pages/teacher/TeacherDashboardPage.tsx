@@ -586,11 +586,11 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
   )
 
   return (
-    <div className="min-h-screen bg-[#F5F7FB]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-[#F5F7FB]">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-w-0">
         {/* Header Dashboard Guru */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-6 min-w-0">
+          <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200/60 inline-flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-teal-600" />
@@ -637,8 +637,8 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
         </div>
 
         {/* Tab Navigasi Utama Guru */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
             {navItems.map((item) => (
               <Link
                 key={item.id}
@@ -649,26 +649,26 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
                     : 'bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80'
                 }`}
               >
-                <item.icon className="w-4 h-4" />
+                <item.icon className="w-4 h-4 shrink-0" />
                 <span>{item.label}</span>
               </Link>
             ))}
           </div>
 
           {/* Shortcut Navigasi ke Materi & Latihan */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
             <Link
               to="/materi"
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200/90 text-slate-700 hover:text-[#101C3A] hover:bg-slate-50 text-xs font-bold transition-colors shadow-2xs"
             >
-              <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+              <BookOpen className="w-3.5 h-3.5 text-teal-600 shrink-0" />
               <span>Materi Pembelajaran</span>
             </Link>
             <Link
               to="/latihan"
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200/90 text-slate-700 hover:text-[#101C3A] hover:bg-slate-50 text-xs font-bold transition-colors shadow-2xs"
             >
-              <GraduationCap className="w-3.5 h-3.5 text-teal-600" />
+              <GraduationCap className="w-3.5 h-3.5 text-teal-600 shrink-0" />
               <span>Latihan Soal</span>
             </Link>
           </div>

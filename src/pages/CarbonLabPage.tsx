@@ -180,7 +180,7 @@ export default function CarbonLabPage() {
   const [isBromineAdded, setIsBromineAdded] = useState<boolean>(false)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10 min-w-0 overflow-x-hidden">
       {/* Header */}
       <div className="space-y-3 max-w-3xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold">
@@ -197,10 +197,10 @@ export default function CarbonLabPage() {
       </div>
 
       {/* Lab Tabs */}
-      <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xs min-w-0">
         <button
           onClick={() => handleSwitchTab('builder')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
             activeTab === 'builder'
               ? 'bg-[#101C3A] text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
@@ -212,7 +212,7 @@ export default function CarbonLabPage() {
 
         <button
           onClick={() => handleSwitchTab('combustion')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
             activeTab === 'combustion'
               ? 'bg-[#101C3A] text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
@@ -224,7 +224,7 @@ export default function CarbonLabPage() {
 
         <button
           onClick={() => handleSwitchTab('unsaturation')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
             activeTab === 'unsaturation'
               ? 'bg-[#101C3A] text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
@@ -485,10 +485,10 @@ export default function CarbonLabPage() {
           </div>
 
           {/* Toggle Sempurna vs Tidak Sempurna */}
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 min-w-0">
             <button
               onClick={() => setIsComplete(true)}
-              className={`flex-1 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 min-w-0 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                 isComplete
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -499,7 +499,7 @@ export default function CarbonLabPage() {
             </button>
             <button
               onClick={() => setIsComplete(false)}
-              className={`flex-1 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 min-w-0 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                 !isComplete
                   ? 'bg-amber-600 text-white shadow-md'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -628,13 +628,13 @@ export default function CarbonLabPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-slate-700">Pilih Sampel yang Diuji:</span>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 min-w-0">
                   <button
                     onClick={() => {
                       setUnsaturationSample('alkena')
                       setIsBromineAdded(false)
                     }}
-                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                       unsaturationSample === 'alkena'
                         ? 'bg-[#101C3A] text-white shadow-2xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -647,7 +647,7 @@ export default function CarbonLabPage() {
                       setUnsaturationSample('alkana')
                       setIsBromineAdded(false)
                     }}
-                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                       unsaturationSample === 'alkana'
                         ? 'bg-[#101C3A] text-white shadow-2xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'

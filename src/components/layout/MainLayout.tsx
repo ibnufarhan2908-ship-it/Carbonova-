@@ -12,9 +12,9 @@ export default function MainLayout() {
   }, [pathname])
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F7FB] text-[#1D2939]">
+    <div className="min-h-screen max-w-full overflow-x-hidden flex flex-col bg-[#F5F7FB] text-[#1D2939]">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 w-full max-w-full min-w-0">
         <Outlet />
       </main>
       <Footer />

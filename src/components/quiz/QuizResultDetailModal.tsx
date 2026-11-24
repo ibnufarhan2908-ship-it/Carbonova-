@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { X, CheckCircle2, XCircle, Trophy, Calendar, Award } from 'lucide-react'
 import type { QuizResult } from '../../types/quiz'
 import { formatChemicalText } from '../ChemicalFormula'
@@ -11,6 +12,74 @@ export default function QuizResultDetailModal({
   result,
   onClose,
 }: QuizResultDetailModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null)
+  const previousActiveElementRef = useRef<HTMLElement | null>(null)
+
+  // Simpan elemen yang aktif sebelum modal terbuka & kembalikan fokus saat modal ditutup
+  useEffect(() => {
+    if (result) {
+      previousActiveElementRef.current = document.activeElement as HTMLElement
+      // Pindahkan fokus ke tombol close atau modal container
+      const closeBtn = modalRef.current?.querySelector('button') as HTMLElement
+      if (closeBtn) {
+        closeBtn.focus()
+      } else if (modalRef.current) {
+        modalRef.current.focus()
+      }
+    }
+
+    return () => {
+      if (previousActiveElementRef.current && typeof previousActiveElementRef.current.focus === 'function') {
+        previousActiveElementRef.current.focus()
+      }
+    }
+  }, [result])
+
+  // Listen tombol Escape dan Focus Trap (Tab tidak keluar dari modal)
+  useEffect(() => {
+    if (!result) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+        return
+      }
+
+      if (e.key === 'Tab') {
+        if (!modalRef.current) return
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+        const focusable = Array.from(focusableElements).filter(
+          (el) => !el.hasAttribute('disabled') && el.offsetParent !== null
+        )
+
+        if (focusable.length === 0) return
+
+        const firstElement = focusable[0]
+        const lastElement = focusable[focusable.length - 1]
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault()
+            lastElement.focus()
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault()
+            firstElement.focus()
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [result, onClose])
+
   if (!result) return null
 
   const formattedDate = new Date(result.completedAt).toLocaleDateString('id-ID', {
@@ -26,9 +95,14 @@ export default function QuizResultDetailModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="quiz-detail-title"
+      aria-label="Detail Hasil Kuis"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
     >
-      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] outline-none"
+      >
         {/* Modal Header */}
         <div className="p-6 bg-gradient-to-r from-[#101C3A] to-[#152852] text-white flex items-center justify-between shrink-0">
           <div className="space-y-1">
@@ -45,8 +119,15 @@ export default function QuizResultDetailModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onClose()
+              }
+            }}
+            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-400"
             aria-label="Tutup detail kuis"
           >
             <X className="w-5 h-5" />
