@@ -345,40 +345,40 @@ export default function CarbonLabPage() {
       </div>
 
       {/* Lab Tabs */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xs min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xs w-full max-w-full min-w-0">
         <button
           onClick={() => handleSwitchTab('builder')}
-          className={`flex-1 min-w-0 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer min-w-0 ${
             activeTab === 'builder'
               ? 'bg-[#101C3A] text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Atom className="w-4 h-4 text-[#5DE0E6]" />
+          <Atom className="w-4 h-4 text-[#5DE0E6] shrink-0" />
           <span>Molecular Builder</span>
         </button>
 
         <button
           onClick={() => handleSwitchTab('combustion')}
-          className={`flex-1 min-w-0 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer min-w-0 ${
             activeTab === 'combustion'
               ? 'bg-[#101C3A] text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Flame className="w-4 h-4 text-amber-400" />
+          <Flame className="w-4 h-4 text-amber-400 shrink-0" />
           <span>Simulasi Pembakaran</span>
         </button>
 
         <button
           onClick={() => handleSwitchTab('unsaturation')}
-          className={`flex-1 min-w-0 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer min-w-0 ${
             activeTab === 'unsaturation'
               ? 'bg-[#101C3A] text-white shadow-xs'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <FlaskConical className="w-4 h-4 text-teal-400" />
+          <FlaskConical className="w-4 h-4 text-teal-400 shrink-0" />
           <span>Uji Ketidakjenuhan</span>
         </button>
       </div>
@@ -636,24 +636,24 @@ export default function CarbonLabPage() {
           <div className="flex flex-col sm:flex-row gap-2 min-w-0">
             <button
               onClick={() => setIsComplete(true)}
-              className={`flex-1 min-w-0 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 min-w-0 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 isComplete
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              <Flame className="w-4 h-4 text-cyan-300" />
+              <Flame className="w-4 h-4 text-cyan-300 shrink-0" />
               <span>Pembakaran Sempurna (O₂ Berlimpah)</span>
             </button>
             <button
               onClick={() => setIsComplete(false)}
-              className={`flex-1 min-w-0 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 min-w-0 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 !isComplete
                   ? 'bg-amber-600 text-white shadow-md'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              <Flame className="w-4 h-4 text-yellow-300" />
+              <Flame className="w-4 h-4 text-yellow-300 shrink-0" />
               <span>Pembakaran Tak Sempurna (O₂ Terbatas)</span>
             </button>
           </div>
@@ -782,7 +782,7 @@ export default function CarbonLabPage() {
                       setUnsaturationSample('alkena')
                       setIsBromineAdded(false)
                     }}
-                    className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                       unsaturationSample === 'alkena'
                         ? 'bg-[#101C3A] text-white shadow-2xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -795,7 +795,7 @@ export default function CarbonLabPage() {
                       setUnsaturationSample('alkana')
                       setIsBromineAdded(false)
                     }}
-                    className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                       unsaturationSample === 'alkana'
                         ? 'bg-[#101C3A] text-white shadow-2xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'

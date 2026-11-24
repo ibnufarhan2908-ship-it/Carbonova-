@@ -101,7 +101,7 @@ export default function StudentDashboardPage() {
           </div>
 
           {/* Quick Profile & Logout */}
-          <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 min-w-0">
+          <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 min-w-0">
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 pr-4 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#101C3A] to-[#1DAA9A] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
                 {user?.name ? user.name.substring(0, 2).toUpperCase() : 'SD'}
@@ -129,27 +129,27 @@ export default function StudentDashboardPage() {
 
         {/* Navigasi Utama Siswa Sesuai Kriteria 6 */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 min-w-0">
-            <span className="px-4 py-2.5 rounded-2xl bg-[#101C3A] text-white text-xs sm:text-sm font-bold shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 w-full max-w-full min-w-0">
+            <span className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-[#101C3A] text-white text-xs sm:text-sm font-bold shadow-xs">
               Dashboard Siswa
             </span>
             <Link
               to="/materi"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all"
+              className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all shrink-0"
             >
               <BookOpen className="w-4 h-4 text-teal-600 shrink-0" />
               <span>Materi Pembelajaran</span>
             </Link>
             <Link
               to="/latihan"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all"
+              className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all shrink-0"
             >
               <GraduationCap className="w-4 h-4 text-teal-600 shrink-0" />
               <span>Latihan Soal</span>
             </Link>
             <Link
               to="/riwayat"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all"
+              className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white text-slate-600 hover:text-[#101C3A] hover:bg-slate-100 border border-slate-200/80 text-xs sm:text-sm font-bold transition-all shrink-0"
             >
               <History className="w-4 h-4 text-teal-600 shrink-0" />
               <span>Riwayat Pengerjaan</span>
@@ -299,7 +299,7 @@ export default function StudentDashboardPage() {
 
         {/* Tabel Riwayat Pengerjaan Pribadi Siswa */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-bold text-[#101C3A]">Riwayat Pengerjaan Saya</h2>
               <p className="text-xs text-slate-500 mt-0.5">
