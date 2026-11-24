@@ -2,10 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =========================================================================
-    // HELPER FUNCTIONS & HAK AKSES AD11-01
-    // =========================================================================
-
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -14,7 +11,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // AD11-01: Verifikasi Akun Guru Resmi Tepercaya (Whitelist Tunggal)
+    // Trusted teacher whitelist (UIDs or demo email)
     function isTrustedTeacher() {
       return isSignedIn() && (
         request.auth.token.email == 'guru.demo@carbonova.test' ||
@@ -23,18 +20,27 @@ service cloud.firestore {
       );
     }
 
-    // =========================================================================
-    // 1. KOLEKSI PENGGUNA (users)
-    // - Pendaftar umum DILARANG memilih / menetapkan role 'teacher' / 'guru'
-    // - Pembaruan profil dilarang mengelevasi field 'role' ke 'teacher' / 'guru'
-    // - Siswa hanya boleh membaca profil miliknya sendiri
-    // - Hanya akun guru tepercaya yang boleh membaca seluruh profil siswa
-    // =========================================================================
+    // Teacher or teacher_demo role (stored in user profile) can read everything needed
+    function isTeacherOrDemo() {
+      return isSignedIn() && (
+        isTrustedTeacher() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['teacher', 'teacher_demo']
+      );
+    }
+
+    // ---------------------------------------------------------------------
+    // 1. Users collection
+    // - Students can read their own profile only
+    // - Teachers (trusted or with role teacher/teacher_demo) can read all profiles
+    // - Creation allowed for self with role student (cannot set teacher role)
+    // - Updates allowed for self unless changing role to teacher/teacher_demo
+    // - Deletion allowed for teachers only
+    // ---------------------------------------------------------------------
     match /users/{userId} {
-      allow read: if isOwner(userId) || isTrustedTeacher();
+      allow read: if isOwner(userId) || isTeacherOrDemo();
 
       allow create: if isOwner(userId) && (
-        isTrustedTeacher() ||
+        isTeacherOrDemo() ||
         (
           request.resource.data.role in ['student', 'siswa'] &&
           request.resource.data.role != 'teacher' &&
@@ -43,46 +49,55 @@ service cloud.firestore {
       );
 
       allow update: if isOwner(userId) && (
-        isTrustedTeacher() ||
+        isTeacherOrDemo() ||
         (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
           request.resource.data.role in ['student', 'siswa']
         )
       );
 
-      allow delete: if isTrustedTeacher();
+      allow delete: if isTeacherOrDemo();
     }
 
-    // =========================================================================
-    // 2. KOLEKSI SUBMISI KUIS (quiz_submissions & quiz_results)
-    // - Guru tepercaya dapat membaca rekap hasil seluruh siswa
-    // - Siswa hanya boleh membaca hasil miliknya sendiri
-    // - Siswa hanya boleh membuat submisi jika userId sesuai auth.uid miliknya
-    // =========================================================================
+    // ---------------------------------------------------------------------
+    // 2. Quiz submissions
+    // - Teachers can read all submissions
+    // - Students can read only their own submissions
+    // - Creation allowed for the authenticated student
+    // - Updates/Deletes allowed for teachers only
+    // ---------------------------------------------------------------------
     match /quiz_submissions/{submissionId} {
-      allow read: if isTrustedTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow read: if isTeacherOrDemo() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isTrustedTeacher();
+      allow update, delete: if isTeacherOrDemo();
     }
 
+    // ---------------------------------------------------------------------
+    // 3. Quiz results
+    // - Teachers can read all results
+    // - Students can read their own results or results linked by email
+    // - Creation allowed for the authenticated student
+    // - Updates/Deletes allowed for teachers only
+    // ---------------------------------------------------------------------
     match /quiz_results/{resultId} {
-      allow read: if isTrustedTeacher() || (isSignedIn() && (
+      allow read: if isTeacherOrDemo() || (isSignedIn() && (
         resource.data.userId == request.auth.uid ||
         resource.data.studentEmail == request.auth.token.email
       ));
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isTrustedTeacher();
+      allow update, delete: if isTeacherOrDemo();
     }
 
-    // =========================================================================
-    // 3. KOLEKSI PROGRES MATERI (module_progress)
-    // - Siswa mencatat progres modul miliknya sendiri
-    // - Guru tepercaya dapat memantau progres seluruh siswa
-    // =========================================================================
+    // ---------------------------------------------------------------------
+    // 4. Module progress
+    // - Teachers can read all progress documents
+    // - Students can read/write only their own progress
+    // - Deletion allowed for teachers only
+    // ---------------------------------------------------------------------
     match /module_progress/{progressId} {
-      allow read: if isTrustedTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow read: if isTeacherOrDemo() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create, update: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isTrustedTeacher();
+      allow delete: if isTeacherOrDemo();
     }
   }
 }

@@ -23,7 +23,7 @@ export async function getOrCreateUserProfile(
   const now = new Date().toISOString()
   // Hak Akses AD11-01: Verifikasi akun guru tepercaya / demo
   const isTeacher = isTeacherAccount(fbUser.email, fbUser.uid)
-  const isDemoTeacher = isTeacherEmail(fbUser.email)
+  const isDemoTeacher = isTeacherDemoAccount(fbUser.email, fbUser.uid)
   const resolvedRole = isTeacher ? resolveTeacherRole(fbUser.email, fbUser.uid) : 'student'
   const fallbackRole: UserRole = isTeacher ? resolvedRole : 'student'
 
