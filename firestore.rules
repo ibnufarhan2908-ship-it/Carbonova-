@@ -2,135 +2,41 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Updated read permissions: trusted teachers and any user whose Firestore profile role is 'teacher' or 'teacher_demo'
-    function isTeacherOrDemo(){
-      return isSignedIn() && (
-        isTrustedTeacher() ||
-        // Fetch user profile and inspect role field
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['teacher','teacher_demo']
-      );
-    }
-
-    // 1. KOLEKSI PENGGUNA (users)
-    // - Siswa hanya boleh membaca profil miliknya sendiri
-    // - Guru (trusted atau role 'teacher'/'teacher_demo') dapat membaca seluruh profil
-    match /users/{userId} {
-      allow read: if isOwner(userId) || isTeacherOrDemo();
-
-      allow create: if isOwner(userId) && (
-        isTeacherOrDemo() ||
-        (
-          request.resource.data.role in ['student', 'siswa'] &&
-          request.resource.data.role != 'teacher' &&
-          request.resource.data.role != 'guru'
-        )
-      );
-
-      allow update: if isOwner(userId) && (
-        isTeacherOrDemo() ||
-        (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
-          request.resource.data.role in ['student', 'siswa']
-        )
-      );
-
-      allow delete: if isTeacherOrDemo();
-    }
-
-    // 2. KOLEKSI SUBMISI KUIS (quiz_submissions & quiz_results)
-    // - Guru (trusted atau role 'teacher'/'teacher_demo') dapat membaca semua hasil
-    // - Siswa hanya dapat membaca hasil miliknya sendiri
-    match /quiz_submissions/{submissionId} {
-      allow read: if isTeacherOrDemo() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isTeacherOrDemo();
-    }
-
-    match /quiz_results/{resultId} {
-      allow read: if isTeacherOrDemo() || (isSignedIn() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.studentEmail == request.auth.token.email
-      ));
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isTeacherOrDebug();
-    }
-
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    function isTeacher() {
+      return isSignedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher'
+      );
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // AD11-01 / AD11-07: Verifikasi Akun Guru Resmi Tepercaya (Whitelist Tunggal)
-    function isTrustedTeacher() {
-      return isSignedIn() && (
-        request.auth.token.email == 'guru@carbonova.com' ||
-        request.auth.token.email == 'guru.utama@carbonova.sch.id'
-      );
-    }
-
-    // =========================================================================
-    // 1. KOLEKSI PENGGUNA (users)
-    // - Pendaftar umum DILARANG memilih / menetapkan role 'teacher' / 'guru'
-    // - Pembaruan profil dilarang mengelevasi field 'role' ke 'teacher' / 'guru'
-    // - Siswa hanya boleh membaca profil miliknya sendiri
-    // - Hanya akun guru tepercaya yang boleh membaca seluruh profil siswa
-    // =========================================================================
     match /users/{userId} {
-      allow read: if isOwner(userId) || isTrustedTeacher();
-
-      allow create: if isOwner(userId) && (
-        isTrustedTeacher() ||
-        (
-          request.resource.data.role in ['student', 'siswa'] &&
-          request.resource.data.role != 'teacher' &&
-          request.resource.data.role != 'guru'
-        )
-      );
-
-      allow update: if isOwner(userId) && (
-        isTrustedTeacher() ||
-        (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
-          request.resource.data.role in ['student', 'siswa']
-        )
-      );
-
-      allow delete: if isTrustedTeacher();
+      allow read: if isTeacher() || isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isTeacher() || isOwner(userId);
     }
 
-    // =========================================================================
-    // 2. KOLEKSI SUBMISI KUIS (quiz_submissions & quiz_results)
-    // - Guru tepercaya dapat membaca rekap hasil seluruh siswa
-    // - Siswa hanya boleh membaca hasil miliknya sendiri
-    // - Siswa hanya boleh membuat submisi jika userId sesuai auth.uid miliknya
-    // =========================================================================
-    match /quiz_submissions/{submissionId} {
-      allow read: if isTrustedTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isTrustedTeacher();
+    match /quiz_submissions/{docId} {
+      allow read: if isTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.data.userId == request.auth.uid;
+      allow update: if isTeacher();
     }
 
-    match /quiz_results/{resultId} {
-      allow read: if isTrustedTeacher() || (isSignedIn() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.studentEmail == request.auth.token.email
-      ));
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isTrustedTeacher();
+    match /quiz_results/{docId} {
+      allow read: if isTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.data.userId == request.auth.uid;
     }
 
-    // =========================================================================
-    // 3. KOLEKSI PROGRES MATERI (module_progress)
-    // - Siswa mencatat progres modul miliknya sendiri
-    // - Guru tepercaya dapat memantau progres seluruh siswa
-    // =========================================================================
-    match /module_progress/{progressId} {
-      allow read: if isTrustedTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create, update: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isTrustedTeacher();
+    match /module_progress/{docId} {
+      allow read: if isTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.data.userId == request.auth.uid;
+      allow update: if isTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
   }
 }
