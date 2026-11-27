@@ -220,5 +220,25 @@
     "passwordHash": "6be49862967420deace2252fdef1f95dd87cc8119faf40e8d0b4db3046d2e07d",
     "salt": "54f92f2de4d15c9840f3a3bf4bfa8690",
     "createdAt": "2026-11-24T13:00:39.531Z"
+  },
+  {
+    "id": "usr-student-mwz3ea8t-bf99f8",
+    "name": "Siswa Backend Api",
+    "email": "siswa.backend.1795790666296@sekolah.sch.id",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "e8ab9c82e5bd66aa999ee84c81032385b6243480ec3d4c7c4d04f4060e09907d",
+    "salt": "370e965a5e742eeb03e4dd8fe65fd611",
+    "createdAt": "2026-11-27T14:44:26.333Z"
+  },
+  {
+    "id": "usr-student-mwz3hc8a-c59cda",
+    "name": "Siswa Backend Api",
+    "email": "siswa.backend.1795790808837@sekolah.sch.id",
+    "role": "student",
+    "status": "active",
+    "passwordHash": "0ff90dd416133976d533a23c0a12d8c1e4b7c70fef4a0c913a9752b24fbba36e",
+    "salt": "6a19e50d297774067f5b6d241047efd8",
+    "createdAt": "2026-11-27T14:46:48.875Z"
   }
 ]

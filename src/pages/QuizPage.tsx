@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom'
+import { useSearchParams, useLocation, Link } from 'react-router-dom'
 import {
   GraduationCap,
   CheckCircle2,
@@ -31,13 +31,13 @@ import { formatChemicalText } from '../components/ChemicalFormula'
 export default function QuizPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
-  const navigate = useNavigate()
   const isHistoryRoute = location.pathname === '/riwayat' || searchParams.get('tab') === 'riwayat'
   const activeTab: 'kuis' | 'riwayat' = isHistoryRoute ? 'riwayat' : 'kuis'
 
   const { user, isLoading: authLoading } = useAuth()
   const userUid = user?.uid || user?.id
-  const { history, statistics, saveResult, deleteResult, clearHistory, setHistory } = useQuizHistory(userUid)
+  const effectiveUid = userUid || 'guest'
+  const { history, statistics, saveResult, deleteResult, clearHistory, setHistory } = useQuizHistory(effectiveUid)
 
   // Categories list
   const categories = [
@@ -220,18 +220,7 @@ export default function QuizPage() {
   const handleSubmitQuiz = () => {
     if (hasSavedRef.current) return
 
-    // Guard: Pengguna umum wajib login sebelum mengirimkan jawaban
-    if (!user || !userUid) {
-      navigate('/login', {
-        state: {
-          from: location.pathname,
-          message:
-            'Silakan masuk (login) terlebih dahulu menggunakan akun siswa untuk mengerjakan dan mengirimkan jawaban latihan soal.',
-        },
-      })
-      return
-    }
-
+    // Tamu dapat menyelesaikan kuis dan progres disimpan ke localStorage
     setIsSubmitted(true)
 
     const attemptId = `quiz_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
@@ -416,6 +405,24 @@ export default function QuizPage() {
           Uji pemahaman Anda melalui bank soal HOTS berbasis stimulus data, analisis ikatan kimia, dan evaluasi ilmiah.
         </p>
       </div>
+
+      {/* Guest Mode Notification Banner */}
+      {!user && (
+        <div className="p-3.5 bg-teal-50/70 border border-teal-200/80 rounded-2xl text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
+            <span>
+              <strong>Mode Tamu:</strong> Anda dapat mengerjakan kuis & materi. Progres dan riwayat tersimpan di peramban ini (localStorage).
+            </span>
+          </div>
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center gap-1 font-bold text-teal-800 hover:text-teal-950 underline shrink-0"
+          >
+            Login / Daftar Akun
+          </Link>
+        </div>
+      )}
 
       {/* Main Tabs: Kuis vs Riwayat */}
       <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xs">

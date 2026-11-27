@@ -11,7 +11,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, isFirebaseConfigured } from './firebase.ts'
 import type { User, UserRole } from '../types/auth.ts'
-import { isTeacherAccount, resolveTeacherRole, isTeacherDemoAccount } from '../config/authConfig.ts'
+import { isTeacherAccount, resolveTeacherRole } from '../config/authConfig.ts'
 
 /**
  * Mengonversi FirebaseUser + data profil Firestore menjadi model User aplikasi
@@ -23,10 +23,6 @@ export async function getOrCreateUserProfile(
   const now = new Date().toISOString()
   // Hak Akses AD11-01: Verifikasi akun guru tepercaya
   const isTeacher = isTeacherAccount(fbUser.email, fbUser.uid)
-<<<<<<< HEAD
-  const isDemoTeacher = isTeacherDemoAccount(fbUser.email, fbUser.uid)
-=======
->>>>>>> 0371e8544c92c247cbe218dbb4a16496d49b74eb
   const resolvedRole = isTeacher ? resolveTeacherRole(fbUser.email, fbUser.uid) : 'student'
   const fallbackRole: UserRole = isTeacher ? resolvedRole : 'student'
 
@@ -90,17 +86,6 @@ export async function getOrCreateUserProfile(
       lastLoginAt: now,
     }
 
-<<<<<<< HEAD
-      try {
-        await setDoc(userDocRef, {
-          name: newProfile.name,
-          email: newProfile.email,
-          role: effectiveRole,
-          kelas: '-',
-          createdAt: serverTimestamp(),
-        });
-      } catch (err) {
-=======
     try {
       await setDoc(userDocRef, {
         name: newProfile.name,
@@ -110,7 +95,6 @@ export async function getOrCreateUserProfile(
         createdAt: serverTimestamp(),
       })
     } catch (err) {
->>>>>>> 0371e8544c92c247cbe218dbb4a16496d49b74eb
       console.warn('Gagal menyimpan profil baru ke Firestore (periksa Firestore Security Rules):', err)
     }
 

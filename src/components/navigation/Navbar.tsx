@@ -24,7 +24,6 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [materiDropdownOpen, setMateriDropdownOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
-  const [loginModalRedirectPath, setLoginModalRedirectPath] = useState('/latihan')
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout } = useAuth()
@@ -47,14 +46,9 @@ export default function Navbar() {
     navigate('/login', { replace: true })
   }
 
-  // Prevent navigation to history page for guests, show login modal
-  const handleQuizNavClick = (e: React.MouseEvent, path: string) => {
-    if (!isAuthenticated && path === '/riwayat') {
-      e.preventDefault()
-      setLoginModalRedirectPath(path)
-      setIsLoginModalOpen(true)
-      setMobileMenuOpen(false)
-    }
+  // Tamu dapat langsung mengakses semua rute termasuk latihan dan riwayat
+  const handleQuizNavClick = (_e: React.MouseEvent, _path: string) => {
+    setMobileMenuOpen(false)
   }
 
   const navLinks: {
@@ -241,13 +235,16 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-white text-xs font-bold shadow-sm hover:shadow transition-all"
-              >
-                <LogIn className="w-3.5 h-3.5 text-[#5DE0E6]" />
-                <span>Masuk / Daftar</span>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-white text-xs font-bold shadow-sm hover:shadow transition-all"
+                  aria-label="Login atau Daftar Akun"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-[#5DE0E6]" />
+                  <span>Login / Daftar</span>
+                </Link>
+              </div>
             )}
 
             {/* Mobile menu toggle button */}
@@ -335,18 +332,18 @@ export default function Navbar() {
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#101C3A] text-white text-sm font-bold shadow-sm"
               >
                 <LogIn className="w-4 h-4 text-[#5DE0E6]" />
-                <span>Masuk / Daftar</span>
+                <span>Login / Daftar</span>
               </Link>
             )}
           </div>
         </div>
       )}
 
-      {/* Modal Notifikasi Akses Masuk Diperlukan untuk Latihan Soal & Riwayat */}
+      {/* Modal Notifikasi Akses Masuk Diperlukan */}
       <LoginRequiredModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        redirectPath={loginModalRedirectPath}
+        redirectPath="/latihan"
       />
     </header>
   )

@@ -2,7 +2,7 @@
 import OnboardingTour from "../components/OnboardingTour";
 
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Sparkles,
   ArrowRight,
@@ -24,14 +24,8 @@ import ChemicalFormula from '../components/ChemicalFormula'
 import { MOLECULES_DATA } from '../data/molecules'
 import { LESSON_MODULES, LEARNING_OBJECTIVES } from '../data/lessons'
 import { QUIZ_QUESTIONS } from '../data/questions'
-import { useAuth } from '../context/AuthContext'
-import LoginRequiredModal from '../components/auth/LoginRequiredModal'
 
 export default function HomePage() {
-  const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
-
   // State for Featured Molecules section
   const [selectedMoleculeId, setSelectedMoleculeId] = useState<string>('etanol')
   const activeMolecule =
@@ -505,20 +499,13 @@ export default function HomePage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (!isAuthenticated) {
-                setIsLoginModalOpen(true)
-              } else {
-                navigate('/latihan')
-              }
-            }}
+          <Link
+            to="/latihan"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-xs font-bold text-white transition-colors cursor-pointer"
           >
             <GraduationCap className="w-4 h-4 text-[#5DE0E6]" />
             <span>Bank Soal Lengkap</span>
-          </button>
+          </Link>
         </div>
 
         {/* Live Interactive Question Box */}
@@ -696,13 +683,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Modal Notifikasi Masuk untuk Latihan Soal */}
-      <LoginRequiredModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        redirectPath="/latihan"
-      />
     </div>
   )
 }

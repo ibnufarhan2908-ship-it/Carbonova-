@@ -251,10 +251,12 @@ export function markModuleStudied(userId: string, moduleSlug: string): void {
     })
     setStoredItem(PROGRESS_STORAGE_KEY, all)
 
-    // Sinkronisasi progres ke Cloud Firestore
-    saveModuleProgressToFirestore(userId, moduleSlug).catch((err) => {
-      console.warn('Gagal menyimpan progres ke Firestore:', err)
-    })
+    // Sinkronisasi progres ke Cloud Firestore (hanya untuk user terdaftar, bukan tamu)
+    if (userId && userId !== 'guest') {
+      saveModuleProgressToFirestore(userId, moduleSlug).catch((err) => {
+        console.warn('Gagal menyimpan progres ke Firestore:', err)
+      })
+    }
   }
 }
 
