@@ -7,7 +7,7 @@ export default function OnboardingTour() {
         const sudahLihat = localStorage.getItem("carbonova-onboarding-done");
         if (sudahLihat) return;
 
-        const timer = setTimeout(() => {
+        const startTour = () => {
             const driverObj = driver({
                 animate: true,
                 showProgress: true,
@@ -64,8 +64,18 @@ export default function OnboardingTour() {
             });
 
             driverObj.drive();
-        }, 1000);
+        };
 
+        const welcomeSeen = localStorage.getItem("carbonova_welcome_seen");
+        if (welcomeSeen !== "true") {
+            const handleWelcomeClosed = () => {
+                setTimeout(startTour, 400);
+            };
+            window.addEventListener("carbonova:welcome_closed", handleWelcomeClosed, { once: true });
+            return () => window.removeEventListener("carbonova:welcome_closed", handleWelcomeClosed);
+        }
+
+        const timer = setTimeout(startTour, 800);
         return () => clearTimeout(timer);
     }, []);
 

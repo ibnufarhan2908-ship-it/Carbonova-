@@ -1,4 +1,4 @@
-import { Atom, BookOpen, Compass, FlaskConical, GraduationCap } from 'lucide-react'
+import { Atom, BookOpen, Compass, FlaskConical, GraduationCap, Sparkles } from 'lucide-react'
 
 export default function AboutPage() {
   return (
@@ -16,6 +16,16 @@ export default function AboutPage() {
           Carbonova dirancang untuk mengatasi kesulitan siswa dalam memahami struktur tiga dimensi,
           tata nama sistematis, serta hubungan antara rumus dan sifat fisik-kimia senyawa organik.
         </p>
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event('carbonova:open_welcome'))}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-50 text-teal-800 hover:bg-teal-100 text-xs font-bold transition-all border border-teal-200 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#1DAA9A]" />
+            <span>Buka Kembali Popup Pengenalan</span>
+          </button>
+        </div>
       </div>
 
       {/* Vision & Problem Statement */}

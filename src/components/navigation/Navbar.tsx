@@ -19,14 +19,40 @@ import {
 import { LESSON_MODULES } from '../../data/lessons'
 import { useAuth } from '../../context/AuthContext'
 import LoginRequiredModal from '../auth/LoginRequiredModal'
+import WelcomeModal from '../home/WelcomeModal'
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [materiDropdownOpen, setMateriDropdownOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout } = useAuth()
+
+  // Welcome Modal: muncul otomatis saat pertama kali buka web di halaman Beranda
+  useEffect(() => {
+    const isHome = location.pathname === '/' || location.pathname === '/beranda'
+    if (isHome) {
+      const hasSeen = localStorage.getItem('carbonova_welcome_seen')
+      if (hasSeen !== 'true') {
+        setIsWelcomeModalOpen(true)
+      }
+    }
+  }, [location.pathname])
+
+  // Listener untuk membuka kembali Welcome Modal melalui event
+  useEffect(() => {
+    const handleOpen = () => setIsWelcomeModalOpen(true)
+    window.addEventListener('carbonova:open_welcome', handleOpen)
+    return () => window.removeEventListener('carbonova:open_welcome', handleOpen)
+  }, [])
+
+  const handleCloseWelcomeModal = () => {
+    localStorage.setItem('carbonova_welcome_seen', 'true')
+    setIsWelcomeModalOpen(false)
+    window.dispatchEvent(new Event('carbonova:welcome_closed'))
+  }
 
   // Close menus on route change
   useEffect(() => {
@@ -46,8 +72,14 @@ export default function Navbar() {
     navigate('/login', { replace: true })
   }
 
-  // Tamu dapat langsung mengakses semua rute termasuk latihan dan riwayat
-  const handleQuizNavClick = (_e: React.MouseEvent, _path: string) => {
+  // Navigasi tautan: buka Welcome Modal saat tombol Tentang diklik
+  const handleNavLinkClick = (e: React.MouseEvent, path: string) => {
+    if (path === '/tentang') {
+      e.preventDefault()
+      setIsWelcomeModalOpen(true)
+      setMobileMenuOpen(false)
+      return
+    }
     setMobileMenuOpen(false)
   }
 
@@ -178,7 +210,7 @@ export default function Navbar() {
                   key={link.path}
                   to={link.path}
                   data-tour={link.dataTour}
-                  onClick={(e) => handleQuizNavClick(e, link.path)}
+                  onClick={(e) => handleNavLinkClick(e, link.path)}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                     active
                       ? 'text-[#101C3A] bg-slate-100/90 font-bold'
@@ -303,7 +335,7 @@ export default function Navbar() {
                   key={link.path}
                   to={link.path}
                   data-tour={link.dataTour}
-                  onClick={(e) => handleQuizNavClick(e, link.path)}
+                  onClick={(e) => handleNavLinkClick(e, link.path)}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                     active
                       ? 'bg-teal-50 text-[#1DAA9A] font-bold'
@@ -344,6 +376,12 @@ export default function Navbar() {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         redirectPath="/latihan"
+      />
+
+      {/* Welcome Modal Perkenalan Carbonova */}
+      <WelcomeModal
+        isOpen={isWelcomeModalOpen}
+        onClose={handleCloseWelcomeModal}
       />
     </header>
   )
