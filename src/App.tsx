@@ -52,27 +52,15 @@ export default function App() {
             {/* 2. Rute Terkunci Khusus Siswa/Guru Terautentikasi (Latihan Soal & Riwayat) */}
             <Route
               path="latihan"
-              element={
-                <ProtectedRoute>
-                  <QuizPage />
-                </ProtectedRoute>
-              }
+              element={<QuizPage />}
             />
             <Route
               path="latihan-soal"
-              element={
-                <ProtectedRoute>
-                  <QuizPage />
-                </ProtectedRoute>
-              }
+              element={<QuizPage />}
             />
             <Route
               path="riwayat"
-              element={
-                <ProtectedRoute>
-                  <QuizPage />
-                </ProtectedRoute>
-              }
+              element={<QuizPage />}
             />
 
             {/* 3. Dashboard Guru (Akses Eksklusif Role Teacher) */}

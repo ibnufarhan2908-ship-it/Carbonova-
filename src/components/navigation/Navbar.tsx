@@ -47,9 +47,9 @@ export default function Navbar() {
     navigate('/login', { replace: true })
   }
 
-  // Intersep klik menu kuis jika pengguna belum login
+  // Prevent navigation to history page for guests, show login modal
   const handleQuizNavClick = (e: React.MouseEvent, path: string) => {
-    if (!isAuthenticated && (path === '/latihan' || path === '/riwayat')) {
+    if (!isAuthenticated && path === '/riwayat') {
       e.preventDefault()
       setLoginModalRedirectPath(path)
       setIsLoginModalOpen(true)
