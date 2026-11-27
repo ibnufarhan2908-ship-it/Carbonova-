@@ -11,7 +11,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, isFirebaseConfigured } from './firebase.ts'
 import type { User, UserRole } from '../types/auth.ts'
-import { isTeacherAccount, resolveTeacherRole } from '../config/authConfig.ts'
+import { isTeacherAccount, resolveTeacherRole, isTeacherDemoAccount } from '../config/authConfig.ts'
 
 /**
  * Mengonversi FirebaseUser + data profil Firestore menjadi model User aplikasi

@@ -16,27 +16,42 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // DATA USER - Guru bisa liat semua, siswa cuma liat punya sendiri
     match /users/{userId} {
       allow read: if isTeacher() || isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
       allow update: if isTeacher() || isOwner(userId);
     }
 
+    // HASIL KUIS (SUBMISSIONS) - Cuma yang login bisa kirim, guru bisa liat semua
     match /quiz_submissions/{docId} {
       allow read: if isTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && request.data.userId == request.auth.uid;
       allow update: if isTeacher();
     }
 
+    // HASIL KUIS (RESULTS) - Sama, cuma yang login
     match /quiz_results/{docId} {
       allow read: if isTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && request.data.userId == request.auth.uid;
     }
 
+    // PROGRES MATERI - Cuma yang login bisa simpan & liat punya sendiri
     match /module_progress/{docId} {
       allow read: if isTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && request.data.userId == request.auth.uid;
       allow update: if isTeacher() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // MATERI & KUIS - BOLEH DIBACA SEMUA ORANG, TERMASUK TAMU TANPA LOGIN
+    match /materials/{docId} {
+      allow read: if true;
+    }
+    match /modules/{docId} {
+      allow read: if true;
+    }
+    match /quizzes/{docId} {
+      allow read: if true;
     }
   }
 }
