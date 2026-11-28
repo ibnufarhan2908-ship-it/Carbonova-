@@ -209,34 +209,58 @@ export default function MaterialsPage() {
       {/* Module Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredModules.map((module) => {
+          // Hanya cek freemium untuk GUEST (belum login)
+          const isGuest = !isAuthenticated
           const free = isModuleFree(module)
+          const isLocked = isGuest && !free // Terkunci hanya jika guest DAN bukan modul gratis
+
+          // Status progres hanya untuk user yang sudah login
+          const isStudied = isAuthenticated && studiedSlugs.has(module.slug)
+
           return (
             <div
               key={module.id}
-              className="bg-white rounded-3xl border border-slate-200/90 p-6 flex flex-col justify-between shadow-xs transition-all hover:shadow-md hover:border-slate-300"
+              className={`bg-white rounded-3xl border p-6 flex flex-col justify-between shadow-xs transition-all hover:shadow-md ${
+                isLocked
+                  ? 'border-amber-200/80 hover:border-amber-300'
+                  : 'border-slate-200/90 hover:border-slate-300'
+              }`}
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Badge Nomor Modul */}
                     <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60 inline-flex items-center gap-1">
                       <Atom className="w-3 h-3 text-[#1DAA9A]" />
                       Modul {module.moduleNumber}
                     </span>
-                    {free ? (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200/60 inline-flex items-center gap-1">
-                        Gratis
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 inline-flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-amber-600" />
-                        Terkunci
-                      </span>
+
+                    {/* Badge Freemium — HANYA tampil untuk GUEST */}
+                    {isGuest && (
+                      free ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200/60 inline-flex items-center gap-1">
+                          Gratis
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 inline-flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-amber-600" />
+                          Terkunci
+                        </span>
+                      )
                     )}
-                    {studiedSlugs.has(module.slug) && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 inline-flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        Selesai
-                      </span>
+
+                    {/* Badge Status Progres — HANYA tampil untuk user LOGIN */}
+                    {isAuthenticated && (
+                      isStudied ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 inline-flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Selesai
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200/60 inline-flex items-center gap-1">
+                          Belum
+                        </span>
+                      )
                     )}
                   </div>
                   <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
@@ -278,14 +302,15 @@ export default function MaterialsPage() {
                 <span className="text-xs font-mono font-bold text-slate-500">
                   {module.keyFormula ? formatChemicalText(module.keyFormula) : ''}
                 </span>
-                {!free && !isAuthenticated ? (
+                {/* Tombol TERKUNCI — hanya untuk guest pada modul tidak gratis */}
+                {isLocked ? (
                   <button
                     type="button"
                     onClick={() => handleSelectModule(module.slug)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition-all shadow-2xs cursor-pointer"
                   >
                     <Lock className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Buka Materi</span>
+                    <span>Login untuk Membuka</span>
                   </button>
                 ) : (
                   <button
