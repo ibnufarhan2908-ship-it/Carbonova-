@@ -88,6 +88,14 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="guru/materi"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherDashboardPage initialView="materials" />
+                </ProtectedRoute>
+              }
+            />
             <Route path="guru" element={<Navigate to="/guru/dashboard" replace />} />
 
             {/* 4. Dashboard Siswa (Akses Khusus Role Student) */}

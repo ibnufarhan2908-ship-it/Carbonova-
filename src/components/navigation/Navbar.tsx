@@ -15,11 +15,13 @@ import {
   LayoutDashboard,
   LogOut,
   LogIn,
+  Lock,
 } from 'lucide-react'
 import { LESSON_MODULES } from '../../data/lessons'
 import { useAuth } from '../../context/AuthContext'
 import LoginRequiredModal from '../auth/LoginRequiredModal'
 import WelcomeModal from '../home/WelcomeModal'
+import { isModuleFree } from '../../utils/freemium'
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -180,8 +182,11 @@ export default function Navbar() {
                                 {module.moduleNumber}
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-xs font-bold text-slate-800 group-hover:text-teal-700">
+                                <span className="text-xs font-bold text-slate-800 group-hover:text-teal-700 flex items-center gap-1.5">
                                   {module.title}
+                                  {!isModuleFree(module.slug) && (
+                                    <Lock className="w-3 h-3 text-amber-500 shrink-0" />
+                                  )}
                                 </span>
                                 <span className="text-[11px] text-slate-500 line-clamp-1">
                                   {module.subtitle}

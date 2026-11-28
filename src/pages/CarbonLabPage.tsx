@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import {
   FlaskConical,
   Atom,
@@ -10,9 +10,13 @@ import {
   ShieldAlert,
   Info,
   Scale,
+  Lock,
+  LogIn,
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 export default function CarbonLabPage() {
+  const { isAuthenticated } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const tabFromUrl = searchParams.get('tab') as 'builder' | 'combustion' | 'unsaturation' | null
   const [internalTab, setInternalTab] = useState<'builder' | 'combustion' | 'unsaturation'>('builder')
@@ -344,7 +348,41 @@ export default function CarbonLabPage() {
         </p>
       </div>
 
-      {/* Lab Tabs */}
+      {/* Jika pengguna adalah tamu (belum login), semua fitur laboratorium terkunci */}
+      {!isAuthenticated ? (
+        <div className="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-14 shadow-sm text-center max-w-2xl mx-auto space-y-6 animate-in fade-in">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-600 flex items-center justify-center mx-auto shadow-2xs">
+            <Lock className="w-8 h-8 text-amber-600" />
+          </div>
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 text-amber-800 text-xs font-bold">
+              <Lock className="w-3.5 h-3.5 text-amber-600" />
+              <span>Akses Laboratorium Terkunci</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#101C3A] tracking-tight">
+              Fitur Laboratorium Virtual Terkunci untuk Tamu
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-lg mx-auto">
+              Semua fitur Carbon Lab (Molecular Builder, Uji Pembakaran Hidrokarbon, dan Uji Ketidakjenuhan Bromin) terkunci untuk tamu dan harus login untuk mengakses.
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to="/login"
+              state={{
+                from: '/lab',
+                message: 'Silakan login terlebih dahulu untuk mengakses seluruh fitur Carbon Lab.',
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all"
+            >
+              <LogIn className="w-4 h-4 text-[#5DE0E6]" />
+              <span>Login / Daftar</span>
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Lab Tabs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xs w-full max-w-full min-w-0">
         <button
           onClick={() => handleSwitchTab('builder')}
@@ -846,6 +884,8 @@ export default function CarbonLabPage() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

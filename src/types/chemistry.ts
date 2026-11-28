@@ -64,6 +64,7 @@ export interface DetailedLesson {
   summaryPoints: string[]
   interactiveWidgetType?: 'name-molecule' | 'isomer-compare' | 'valence-demo' | 'chain-visualizer'
   sources?: LessonSource[]
+  isFree?: boolean
 }
 
 export interface LessonSection {
@@ -86,6 +87,7 @@ export interface LessonModule {
   iconName: string
   badgeText: string
   estimatedMinutes: number
+  isFree?: boolean
 }
 
 export interface QuizQuestion {

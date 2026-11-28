@@ -8,6 +8,8 @@ interface LoginRequiredModalProps {
   onClose: () => void
   redirectPath?: string
   message?: string
+  title?: string
+  buttonText?: string
 }
 
 export default function LoginRequiredModal({
@@ -15,6 +17,8 @@ export default function LoginRequiredModal({
   onClose,
   redirectPath = '/latihan',
   message = 'Silakan masuk (login) terlebih dahulu menggunakan akun siswa untuk mengerjakan dan mengirimkan jawaban latihan soal.',
+  title = 'Akses Masuk Diperlukan',
+  buttonText = 'Login / Daftar',
 }: LoginRequiredModalProps) {
   const navigate = useNavigate()
   const modalRef = useRef<HTMLDivElement>(null)
@@ -127,7 +131,7 @@ export default function LoginRequiredModal({
             id="login-required-title"
             className="text-lg sm:text-xl font-extrabold text-[#101C3A] tracking-tight"
           >
-            Akses Masuk Diperlukan
+            {title}
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-sm mx-auto">
             {message}
@@ -155,7 +159,7 @@ export default function LoginRequiredModal({
             className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#101C3A] hover:bg-[#182852] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <LogIn className="w-4 h-4 text-[#5DE0E6]" />
-            <span>Masuk Sekarang</span>
+            <span>{buttonText}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
           <button

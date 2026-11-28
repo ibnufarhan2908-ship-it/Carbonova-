@@ -17,6 +17,9 @@ import {
   ArrowRight,
   Sparkles,
   Loader2,
+  Lock,
+  Unlock,
+  ShieldCheck,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { db, isFirebaseConfigured } from '../../services/firebase'
@@ -36,9 +39,11 @@ import type { StudentQuizSubmission } from '../../types/auth'
 import QuizResultDetailModal from '../../components/quiz/QuizResultDetailModal'
 import type { QuizResult } from '../../types/quiz'
 import { isTeacherAccount, getTrustedTeacherEmail } from '../../config/authConfig'
+import { LESSON_MODULES } from '../../data/lessons'
+import { setModuleFree, getFreemiumOverrides } from '../../utils/freemium'
 
 interface TeacherDashboardPageProps {
-  initialView?: 'overview' | 'students' | 'results'
+  initialView?: 'overview' | 'students' | 'results' | 'materials'
 }
 
 interface StudentItem {
@@ -57,12 +62,30 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
   const { user, logout } = useAuth()
 
   // Tentukan tampilan aktif berdasarkan props atau pathname
-  const activeView: 'overview' | 'students' | 'results' = useMemo(() => {
+  const activeView: 'overview' | 'students' | 'results' | 'materials' = useMemo(() => {
     if (initialView) return initialView
+    if (location.pathname.includes('/guru/materi')) return 'materials'
     if (location.pathname.includes('/guru/siswa')) return 'students'
     if (location.pathname.includes('/guru/hasil')) return 'results'
     return 'overview'
   }, [initialView, location.pathname])
+
+  // State Pengaturan Freemium Materi
+  const [freemiumOverrides, setFreemiumOverrides] = useState<Record<string, boolean>>(() => getFreemiumOverrides())
+  const [freemiumNotice, setFreemiumNotice] = useState<string | null>(null)
+
+  const handleToggleFreemium = (slug: string, makeFree: boolean) => {
+    setModuleFree(slug, makeFree)
+    setFreemiumOverrides(getFreemiumOverrides())
+    const targetMod = LESSON_MODULES.find((m) => m.slug === slug)
+    const modTitle = targetMod ? targetMod.title : slug
+    setFreemiumNotice(
+      makeFree
+        ? `Modul "${modTitle}" sekarang berstatus GRATIS dan dapat dibuka oleh tamu tanpa login.`
+        : `Modul "${modTitle}" sekarang berstatus TERKUNCI dan mewajibkan login untuk membukanya.`
+    )
+    setTimeout(() => setFreemiumNotice(null), 4500)
+  }
 
   // State Data Firestore Real-Time
   const [firestoreStudents, setFirestoreStudents] = useState<StudentItem[]>([])
@@ -340,6 +363,13 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
       path: '/guru/hasil',
       active: activeView === 'results',
     },
+    {
+      id: 'materials',
+      label: 'Akses Materi',
+      icon: BookOpen,
+      path: '/guru/materi',
+      active: activeView === 'materials',
+    },
   ]
 
   // Komponen Tabel Data Siswa Lengkap
@@ -505,6 +535,103 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
     </>
   )}
 </div>
+  )
+
+  // Komponen Pengaturan Akses Materi (Freemium)
+  const renderMaterialsAccessManagement = () => (
+    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 min-w-0 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/80 text-teal-800 text-xs font-bold mb-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#1DAA9A]" />
+            <span>Kontrol Akses Materi Freemium</span>
+          </div>
+          <h2 className="text-xl font-bold text-[#101C3A]">
+            Pengaturan Akses Materi Pembelajaran
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Atur modul mana yang dapat dibuka tamu secara gratis tanpa login, dan materi mana yang terkunci bagi tamu.
+          </p>
+        </div>
+      </div>
+
+      {freemiumNotice && (
+        <div className="p-3.5 rounded-2xl bg-teal-50 border border-teal-200 text-xs text-teal-900 font-medium flex items-center justify-between animate-in fade-in">
+          <span>{freemiumNotice}</span>
+          <button
+            onClick={() => setFreemiumNotice(null)}
+            className="text-teal-700 hover:text-teal-950 font-bold ml-2 cursor-pointer"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {LESSON_MODULES.map((mod) => {
+          const free = typeof freemiumOverrides[mod.slug] === 'boolean'
+            ? freemiumOverrides[mod.slug]
+            : (mod.isFree ?? (mod.slug === 'kekhasan-atom-karbon' || mod.slug === 'hidrokarbon'))
+
+          return (
+            <div
+              key={mod.id}
+              className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                free
+                  ? 'bg-white border-teal-200/80 shadow-2xs'
+                  : 'bg-slate-50/70 border-slate-200/80'
+              }`}
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                    Modul {mod.moduleNumber}
+                  </span>
+                  {free ? (
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200 flex items-center gap-1">
+                      <Unlock className="w-3 h-3 text-[#1DAA9A]" />
+                      Gratis
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-amber-600" />
+                      Terkunci
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-extrabold text-sm text-[#101C3A] leading-snug">{mod.title}</h3>
+                <p className="text-xs text-slate-500 line-clamp-2">{mod.subtitle}</p>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[11px] font-medium text-slate-500">
+                  {free ? 'Akses bebas tamu' : 'Wajib login'}
+                </span>
+                {free ? (
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFreemium(mod.slug, false)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <Lock className="w-3 h-3 text-amber-600" />
+                    <span>Kunci Materi</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFreemium(mod.slug, true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1DAA9A] hover:bg-[#15887B] text-white text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+                  >
+                    <Unlock className="w-3 h-3 text-white" />
+                    <span>Jadikan Gratis</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 
   return (
@@ -726,6 +853,9 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
               </div>
             </div>
 
+            {/* Pengaturan Akses Materi Freemium di Halaman Overview */}
+            {renderMaterialsAccessManagement()}
+
             {/* Tabel Data Siswa Terdaftar di Halaman Overview */}
             {renderStudentsTable()}
 
@@ -930,6 +1060,11 @@ export default function TeacherDashboardPage({ initialView }: TeacherDashboardPa
             )}
           </div>
         )}
+
+        {/* ========================================================= */}
+        {/* VIEW 4: AKSES MATERI FREEMIUM */}
+        {/* ========================================================= */}
+        {activeView === 'materials' && renderMaterialsAccessManagement()}
       </div>
 
       {/* Modal Detail Jawaban Siswa */}

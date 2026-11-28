@@ -20,6 +20,7 @@ export const LESSON_MODULES: LessonModule[] = [
     iconName: 'Atom',
     badgeText: 'Fondasi Utama',
     estimatedMinutes: 15,
+    isFree: true,
   },
   {
     id: 'modul-2',
@@ -40,6 +41,7 @@ export const LESSON_MODULES: LessonModule[] = [
     iconName: 'Layers',
     badgeText: 'Paling Populer',
     estimatedMinutes: 20,
+    isFree: true,
   },
   {
     id: 'modul-3',
@@ -60,6 +62,7 @@ export const LESSON_MODULES: LessonModule[] = [
     iconName: 'FileText',
     badgeText: 'Keterampilan Wajib',
     estimatedMinutes: 25,
+    isFree: false,
   },
   {
     id: 'modul-4',
@@ -80,6 +83,7 @@ export const LESSON_MODULES: LessonModule[] = [
     iconName: 'Sparkles',
     badgeText: 'Ujian Nasional / UTBK',
     estimatedMinutes: 30,
+    isFree: false,
   },
   {
     id: 'modul-5',
@@ -100,6 +104,7 @@ export const LESSON_MODULES: LessonModule[] = [
     iconName: 'GitBranch',
     badgeText: 'Penalaran Visual',
     estimatedMinutes: 20,
+    isFree: false,
   },
   {
     id: 'modul-6',
@@ -120,6 +125,7 @@ export const LESSON_MODULES: LessonModule[] = [
     iconName: 'Flame',
     badgeText: 'Aplikasi Laboratorium',
     estimatedMinutes: 25,
+    isFree: false,
   },
 ]
 

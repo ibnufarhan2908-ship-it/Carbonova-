@@ -15,7 +15,8 @@
     "test:google": "node test_google_auth.mjs",
     "test:nav": "node test_public_navigation.mjs",
     "test:welcome": "node test_welcome_modal.mjs",
-    "test": "node --experimental-strip-types test_registration.mjs && node --experimental-strip-types test_auth_lms.mjs && node --experimental-strip-types test_quiz_storage_error.mjs && node test_modal_accessibility.mjs && node test_responsive_layout.mjs && node test_google_auth.mjs && node test_public_navigation.mjs && node test_welcome_modal.mjs",
+    "test:freemium": "node test_freemium_access.mjs",
+    "test": "node --experimental-strip-types test_registration.mjs && node --experimental-strip-types test_auth_lms.mjs && node --experimental-strip-types test_quiz_storage_error.mjs && node test_modal_accessibility.mjs && node test_responsive_layout.mjs && node test_google_auth.mjs && node test_public_navigation.mjs && node test_welcome_modal.mjs && node test_freemium_access.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
